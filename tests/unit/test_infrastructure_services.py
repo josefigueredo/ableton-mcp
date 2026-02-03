@@ -53,16 +53,12 @@ class TestTempoAnalysisServiceImpl:
             tracks=[],
         )
 
-    async def test_detect_tempo(
-        self, service: TempoAnalysisServiceImpl, sample_clip: Clip
-    ) -> None:
+    async def test_detect_tempo(self, service: TempoAnalysisServiceImpl, sample_clip: Clip) -> None:
         """Test tempo detection."""
         tempo = await service.detect_tempo(sample_clip)
         assert tempo == 120.0  # Placeholder returns 120
 
-    async def test_suggest_tempo_for_genre_house(
-        self, service: TempoAnalysisServiceImpl
-    ) -> None:
+    async def test_suggest_tempo_for_genre_house(self, service: TempoAnalysisServiceImpl) -> None:
         """Test tempo suggestion for house music."""
         tempo = await service.suggest_tempo_for_genre("house", "medium")
         assert 120 <= tempo <= 130
@@ -81,9 +77,7 @@ class TestTempoAnalysisServiceImpl:
         tempo = await service.suggest_tempo_for_genre("techno", "high")
         assert 125 <= tempo <= 135
 
-    async def test_suggest_tempo_for_unknown_genre(
-        self, service: TempoAnalysisServiceImpl
-    ) -> None:
+    async def test_suggest_tempo_for_unknown_genre(self, service: TempoAnalysisServiceImpl) -> None:
         """Test tempo suggestion for unknown genre defaults to 120."""
         tempo = await service.suggest_tempo_for_genre("unknown_genre", "medium")
         assert tempo == 120.0
@@ -235,9 +229,7 @@ class TestArrangementServiceImpl:
             assert isinstance(energy, float)
             assert 0.0 <= energy <= 1.0
 
-    async def test_suggest_section_lengths_pop(
-        self, service: ArrangementServiceImpl
-    ) -> None:
+    async def test_suggest_section_lengths_pop(self, service: ArrangementServiceImpl) -> None:
         """Test section length suggestions for pop."""
         sections = await service.suggest_section_lengths("pop", 240.0)
 
@@ -258,9 +250,7 @@ class TestArrangementServiceImpl:
         assert "drop" in sections
         assert "breakdown" in sections
 
-    async def test_suggest_section_lengths_house(
-        self, service: ArrangementServiceImpl
-    ) -> None:
+    async def test_suggest_section_lengths_house(self, service: ArrangementServiceImpl) -> None:
         """Test section length suggestions for house music."""
         sections = await service.suggest_section_lengths("house", 300.0)
 
@@ -268,9 +258,7 @@ class TestArrangementServiceImpl:
         assert "intro" in sections
         assert "drop" in sections
 
-    async def test_suggest_section_lengths_default(
-        self, service: ArrangementServiceImpl
-    ) -> None:
+    async def test_suggest_section_lengths_default(self, service: ArrangementServiceImpl) -> None:
         """Test section length suggestions for unknown genre uses default."""
         sections = await service.suggest_section_lengths("unknown_genre", 200.0)
 
@@ -327,9 +315,7 @@ class TestMixingServiceImpl:
         assert "suggestions" in result.data
         assert isinstance(result.data["suggestions"], list)
 
-    async def test_suggest_eq_adjustments_midi(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_suggest_eq_adjustments_midi(self, service: MixingServiceImpl) -> None:
         """Test EQ suggestions for MIDI track."""
         track = Track(
             id=EntityId("track-1"),
@@ -347,9 +333,7 @@ class TestMixingServiceImpl:
             assert "frequency" in suggestion
             assert "type" in suggestion
 
-    async def test_suggest_eq_adjustments_vocal(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_suggest_eq_adjustments_vocal(self, service: MixingServiceImpl) -> None:
         """Test EQ suggestions for vocal track."""
         track = Track(
             id=EntityId("track-1"),
@@ -365,9 +349,7 @@ class TestMixingServiceImpl:
         frequencies = [s["frequency"] for s in suggestions]
         assert any(f >= 3000 for f in frequencies)  # Presence boost
 
-    async def test_suggest_eq_adjustments_drums(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_suggest_eq_adjustments_drums(self, service: MixingServiceImpl) -> None:
         """Test EQ suggestions for drum track."""
         track = Track(
             id=EntityId("track-1"),
@@ -396,9 +378,7 @@ class TestMixingServiceImpl:
         assert "balance" in result.data
         assert "suggestions" in result.data
 
-    async def test_analyze_stereo_image_unbalanced(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_analyze_stereo_image_unbalanced(self, service: MixingServiceImpl) -> None:
         """Test stereo image analysis with unbalanced panning."""
         tracks = [
             Track(id=EntityId("1"), name="Track 1", track_type=TrackType.MIDI, pan=-0.8),
@@ -410,36 +390,28 @@ class TestMixingServiceImpl:
 
         assert result.data["balance"] == "unbalanced"
 
-    async def test_calculate_lufs_target_spotify(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_calculate_lufs_target_spotify(self, service: MixingServiceImpl) -> None:
         """Test LUFS target calculation for Spotify."""
         lufs, peak = await service.calculate_lufs_target("pop", "spotify")
 
         assert lufs == -14
         assert peak == -1.0
 
-    async def test_calculate_lufs_target_apple_music(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_calculate_lufs_target_apple_music(self, service: MixingServiceImpl) -> None:
         """Test LUFS target calculation for Apple Music."""
         lufs, peak = await service.calculate_lufs_target("pop", "apple_music")
 
         assert lufs == -16
         assert peak == -1.0
 
-    async def test_calculate_lufs_target_electronic(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_calculate_lufs_target_electronic(self, service: MixingServiceImpl) -> None:
         """Test LUFS target for electronic genre."""
-        lufs, peak = await service.calculate_lufs_target("electronic", "spotify")
+        lufs, _peak = await service.calculate_lufs_target("electronic", "spotify")
 
         # Electronic gets +1 adjustment
         assert lufs == -13
 
-    async def test_calculate_lufs_target_jazz(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_calculate_lufs_target_jazz(self, service: MixingServiceImpl) -> None:
         """Test LUFS target for jazz (more dynamic range)."""
         lufs, peak = await service.calculate_lufs_target("jazz", "spotify")
 
@@ -447,9 +419,7 @@ class TestMixingServiceImpl:
         assert lufs == -16
         assert peak == -3.0
 
-    async def test_calculate_lufs_target_classical(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_calculate_lufs_target_classical(self, service: MixingServiceImpl) -> None:
         """Test LUFS target for classical (most dynamic range)."""
         lufs, peak = await service.calculate_lufs_target("classical", "spotify")
 
@@ -457,19 +427,15 @@ class TestMixingServiceImpl:
         assert lufs == -20
         assert peak == -3.0
 
-    async def test_calculate_lufs_target_unknown_platform(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_calculate_lufs_target_unknown_platform(self, service: MixingServiceImpl) -> None:
         """Test LUFS target for unknown platform defaults to -14."""
-        lufs, peak = await service.calculate_lufs_target("pop", "unknown_platform")
+        lufs, _peak = await service.calculate_lufs_target("pop", "unknown_platform")
 
         assert lufs == -14
 
-    async def test_calculate_lufs_target_hip_hop(
-        self, service: MixingServiceImpl
-    ) -> None:
+    async def test_calculate_lufs_target_hip_hop(self, service: MixingServiceImpl) -> None:
         """Test LUFS target for hip hop."""
-        lufs, peak = await service.calculate_lufs_target("hip_hop", "spotify")
+        lufs, _peak = await service.calculate_lufs_target("hip_hop", "spotify")
 
         # Hip hop gets +1 adjustment
         assert lufs == -13

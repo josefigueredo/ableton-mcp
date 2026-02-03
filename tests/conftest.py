@@ -1,7 +1,7 @@
 """Pytest configuration and shared fixtures."""
 
 import asyncio
-from typing import AsyncGenerator, Generator
+from collections.abc import Generator
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -110,45 +110,30 @@ class TestContainer(containers.DeclarativeContainer):
     music_theory_service = providers.Singleton(MusicTheoryServiceImpl)
 
     # Service adapters with mock gateway
-    connection_service = providers.Factory(
-        AbletonConnectionService,
-        gateway=ableton_gateway
-    )
-    transport_service = providers.Factory(
-        AbletonTransportService,
-        gateway=ableton_gateway
-    )
-    track_service = providers.Factory(
-        AbletonTrackService,
-        gateway=ableton_gateway
-    )
-    clip_service = providers.Factory(
-        AbletonClipService,
-        gateway=ableton_gateway
-    )
+    connection_service = providers.Factory(AbletonConnectionService, gateway=ableton_gateway)
+    transport_service = providers.Factory(AbletonTransportService, gateway=ableton_gateway)
+    track_service = providers.Factory(AbletonTrackService, gateway=ableton_gateway)
+    clip_service = providers.Factory(AbletonClipService, gateway=ableton_gateway)
 
     # Use cases with dependencies
     connect_use_case = providers.Factory(
-        ConnectToAbletonUseCase,
-        connection_service=connection_service
+        ConnectToAbletonUseCase, connection_service=connection_service
     )
 
     transport_use_case = providers.Factory(
         TransportControlUseCase,
         transport_service=transport_service,
-        song_repository=song_repository
+        song_repository=song_repository,
     )
 
-    song_info_use_case = providers.Factory(
-        GetSongInfoUseCase,
-        song_repository=song_repository
-    )
+    song_info_use_case = providers.Factory(GetSongInfoUseCase, song_repository=song_repository)
 
     track_ops_use_case = providers.Factory(
         TrackOperationsUseCase,
         track_repository=track_repository,
         song_repository=song_repository,
-        track_service=track_service
+        track_service=track_service,
+        refresh_use_case=None,  # Optional in tests
     )
 
     add_notes_use_case = providers.Factory(
@@ -156,12 +141,11 @@ class TestContainer(containers.DeclarativeContainer):
         clip_repository=clip_repository,
         song_repository=song_repository,
         music_theory_service=music_theory_service,
-        clip_service=clip_service
+        clip_service=clip_service,
     )
 
     harmony_analysis_use_case = providers.Factory(
-        AnalyzeHarmonyUseCase,
-        music_theory_service=music_theory_service
+        AnalyzeHarmonyUseCase, music_theory_service=music_theory_service
     )
 
 
@@ -220,23 +204,13 @@ def sample_song() -> Song:
         time_signature_numerator=4,
         time_signature_denominator=4,
         key="C major",
-        transport_state=TransportState.STOPPED
+        transport_state=TransportState.STOPPED,
     )
 
     # Add sample tracks
-    midi_track = Track(
-        name="MIDI Track",
-        track_type=TrackType.MIDI,
-        volume=0.8,
-        pan=0.0
-    )
+    midi_track = Track(name="MIDI Track", track_type=TrackType.MIDI, volume=0.8, pan=0.0)
 
-    audio_track = Track(
-        name="Audio Track",
-        track_type=TrackType.AUDIO,
-        volume=0.7,
-        pan=-0.2
-    )
+    audio_track = Track(name="Audio Track", track_type=TrackType.AUDIO, volume=0.7, pan=-0.2)
 
     song.add_track(midi_track)
     song.add_track(audio_track)
@@ -247,18 +221,10 @@ def sample_song() -> Song:
 @pytest.fixture
 def sample_track() -> Track:
     """Provide a sample track for testing."""
-    track = Track(
-        name="Test Track",
-        track_type=TrackType.MIDI,
-        volume=0.75,
-        pan=0.1
-    )
+    track = Track(name="Test Track", track_type=TrackType.MIDI, volume=0.75, pan=0.1)
 
     # Add sample device
-    device = Device(
-        name="Operator",
-        device_type=DeviceType.INSTRUMENT
-    )
+    device = Device(name="Operator", device_type=DeviceType.INSTRUMENT)
     track.add_device(device)
 
     return track
@@ -267,19 +233,13 @@ def sample_track() -> Track:
 @pytest.fixture
 def sample_clip() -> Clip:
     """Provide a sample MIDI clip for testing."""
-    clip = Clip(
-        name="Test Clip",
-        clip_type=ClipType.MIDI,
-        length=4.0,
-        loop_start=0.0,
-        loop_end=4.0
-    )
+    clip = Clip(name="Test Clip", clip_type=ClipType.MIDI, length=4.0, loop_start=0.0, loop_end=4.0)
 
     # Add sample notes
     notes = [
         Note(pitch=60, start=0.0, duration=1.0, velocity=100),  # C4
-        Note(pitch=64, start=1.0, duration=1.0, velocity=90),   # E4
-        Note(pitch=67, start=2.0, duration=1.0, velocity=95),   # G4
+        Note(pitch=64, start=1.0, duration=1.0, velocity=90),  # E4
+        Note(pitch=67, start=2.0, duration=1.0, velocity=95),  # G4
         Note(pitch=72, start=3.0, duration=1.0, velocity=100),  # C5
     ]
 
@@ -294,8 +254,8 @@ def sample_notes() -> list[Note]:
     """Provide sample notes for testing."""
     return [
         Note(pitch=60, start=0.0, duration=1.0, velocity=100),  # C4
-        Note(pitch=64, start=1.0, duration=1.0, velocity=90),   # E4
-        Note(pitch=67, start=2.0, duration=1.0, velocity=95),   # G4
+        Note(pitch=64, start=1.0, duration=1.0, velocity=90),  # E4
+        Note(pitch=67, start=2.0, duration=1.0, velocity=95),  # G4
         Note(pitch=72, start=3.0, duration=1.0, velocity=100),  # C5
     ]
 

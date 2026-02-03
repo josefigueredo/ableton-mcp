@@ -5,7 +5,7 @@ defines the contracts, and infrastructure provides implementations.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 class AbletonGateway(ABC):
@@ -80,7 +80,7 @@ class AbletonGateway(ABC):
         ...
 
     @abstractmethod
-    async def get_time_signature(self) -> Tuple[int, int]:
+    async def get_time_signature(self) -> tuple[int, int]:
         """Get time signature as (numerator, denominator)."""
         ...
 
@@ -205,9 +205,7 @@ class AbletonGateway(ABC):
         ...
 
     @abstractmethod
-    async def create_clip(
-        self, track_id: int, clip_id: int, length: float
-    ) -> None:
+    async def create_clip(self, track_id: int, clip_id: int, length: float) -> None:
         """Create a new MIDI clip.
 
         Args:
@@ -260,9 +258,7 @@ class AbletonGateway(ABC):
         ...
 
     @abstractmethod
-    async def get_clip_notes(
-        self, track_id: int, clip_id: int
-    ) -> List[Dict[str, Any]]:
+    async def get_clip_notes(self, track_id: int, clip_id: int) -> list[dict[str, Any]]:
         """Get all notes in a clip.
 
         Returns:
@@ -273,9 +269,7 @@ class AbletonGateway(ABC):
     # Device operations
 
     @abstractmethod
-    async def get_device_parameters(
-        self, track_id: int, device_id: int
-    ) -> List[Dict[str, Any]]:
+    async def get_device_parameters(self, track_id: int, device_id: int) -> list[dict[str, Any]]:
         """Get device parameters.
 
         Returns:
@@ -291,8 +285,6 @@ class AbletonGateway(ABC):
         ...
 
     @abstractmethod
-    async def bypass_device(
-        self, track_id: int, device_id: int, bypass: bool
-    ) -> None:
+    async def bypass_device(self, track_id: int, device_id: int, bypass: bool) -> None:
         """Bypass or enable a device."""
         ...

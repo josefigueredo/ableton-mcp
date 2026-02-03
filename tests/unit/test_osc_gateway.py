@@ -1,8 +1,8 @@
 """Unit tests for Ableton OSC gateway."""
 
 import asyncio
-from typing import Any, List
-from unittest.mock import AsyncMock, Mock, patch
+from typing import Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -34,12 +34,10 @@ class TestAbletonOSCGateway:
         correlator.cancel_all = Mock()
         return correlator
 
-    async def test_connect_success(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_connect_success(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test successful connection to Ableton."""
         # Set up correlator to return tempo response
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([120.0])
         mock_correlator.expect_response.return_value = future
 
@@ -59,7 +57,7 @@ class TestAbletonOSCGateway:
     ) -> None:
         """Test connection times out when Ableton doesn't respond."""
         # Set up correlator to return a future that never completes
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         mock_correlator.expect_response.return_value = future
 
         gateway = AbletonOSCGateway(
@@ -75,9 +73,7 @@ class TestAbletonOSCGateway:
         # Should disconnect after timeout
         mock_transport.disconnect.assert_called_once()
 
-    async def test_disconnect(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_disconnect(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test disconnection."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -127,11 +123,9 @@ class TestAbletonOSCGateway:
 
         assert "Not connected" in str(exc_info.value)
 
-    async def test_get_tempo(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_tempo(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting tempo from Ableton."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([120.0])
         mock_correlator.expect_response.return_value = future
 
@@ -164,9 +158,7 @@ class TestAbletonOSCGateway:
         with pytest.raises(OSCCommunicationError):
             await gateway.set_tempo(1000.0)  # Too high
 
-    async def test_track_operations(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_track_operations(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test track operation methods."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -223,9 +215,7 @@ class TestAbletonOSCGateway:
         with pytest.raises(OSCCommunicationError):
             await gateway.set_track_pan(0, -1.5)  # Too low
 
-    async def test_add_note(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_add_note(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test adding a MIDI note."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -259,16 +249,14 @@ class TestAbletonOSCGateway:
         # Simulate message received
         gateway._handle_osc_message("/live/song/get/tempo", [120.0])
 
-        mock_correlator.handle_response.assert_called_once_with(
-            "/live/song/get/tempo", [120.0]
-        )
+        mock_correlator.handle_response.assert_called_once_with("/live/song/get/tempo", [120.0])
 
     async def test_connect_cleanup_error_is_logged(
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test that cleanup errors during connection timeout are handled."""
         # Set up correlator to return a future that never completes
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         mock_correlator.expect_response.return_value = future
         # Make disconnect raise an error
         mock_transport.disconnect = AsyncMock(side_effect=RuntimeError("Cleanup failed"))
@@ -284,9 +272,7 @@ class TestAbletonOSCGateway:
 
         assert "not responding" in str(exc_info.value)
 
-    async def test_connect_os_error(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_connect_os_error(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test OSError during connection."""
         mock_transport.connect = AsyncMock(side_effect=OSError("Network error"))
 
@@ -320,7 +306,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test get_tempo with empty response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -335,9 +321,7 @@ class TestAbletonOSCGateway:
 
         assert "Empty response" in str(exc_info.value)
 
-    async def test_set_tempo_valid(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_set_tempo_valid(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test setting valid tempo."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -348,13 +332,11 @@ class TestAbletonOSCGateway:
 
         mock_transport.send.assert_called_with("/live/song/set/tempo", [140.0])
 
-    async def test_get_time_signature(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_time_signature(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting time signature."""
-        future_num: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future_num: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future_num.set_result([4])
-        future_denom: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future_denom: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future_denom.set_result([4])
 
         mock_correlator.expect_response.side_effect = [future_num, future_denom]
@@ -374,9 +356,9 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test get_time_signature with empty response."""
-        future_num: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future_num: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future_num.set_result([])
-        future_denom: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future_denom: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future_denom.set_result([])
 
         mock_correlator.expect_response.side_effect = [future_num, future_denom]
@@ -392,11 +374,9 @@ class TestAbletonOSCGateway:
 
         assert "Empty response" in str(exc_info.value)
 
-    async def test_get_song_time(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_song_time(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting song time."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([8.5])
         mock_correlator.expect_response.return_value = future
 
@@ -414,7 +394,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test get_song_time with empty response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -429,11 +409,9 @@ class TestAbletonOSCGateway:
 
         assert "Empty response" in str(exc_info.value)
 
-    async def test_get_num_tracks(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_num_tracks(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting number of tracks."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([8])
         mock_correlator.expect_response.return_value = future
 
@@ -451,7 +429,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test get_num_tracks with empty response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -466,11 +444,9 @@ class TestAbletonOSCGateway:
 
         assert "Empty response" in str(exc_info.value)
 
-    async def test_get_is_playing(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_is_playing(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test checking if playing."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([1])
         mock_correlator.expect_response.return_value = future
 
@@ -488,7 +464,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test get_is_playing with empty response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -503,11 +479,9 @@ class TestAbletonOSCGateway:
 
         assert "Empty response" in str(exc_info.value)
 
-    async def test_get_track_name(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_track_name(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting track name."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0, "Bass"])
         mock_correlator.expect_response.return_value = future
 
@@ -525,7 +499,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track name with single value response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result(["Drums"])
         mock_correlator.expect_response.return_value = future
 
@@ -543,7 +517,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track name with empty response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -558,9 +532,7 @@ class TestAbletonOSCGateway:
 
         assert "Empty response" in str(exc_info.value)
 
-    async def test_set_track_name(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_set_track_name(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test setting track name."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -571,11 +543,9 @@ class TestAbletonOSCGateway:
 
         mock_transport.send.assert_called_with("/live/track/set/name", [0, "Lead Synth"])
 
-    async def test_get_track_volume(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_track_volume(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting track volume."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0, 0.75])
         mock_correlator.expect_response.return_value = future
 
@@ -593,7 +563,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track volume with single value response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0.5])
         mock_correlator.expect_response.return_value = future
 
@@ -611,7 +581,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track volume with empty response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -626,11 +596,9 @@ class TestAbletonOSCGateway:
 
         assert "Empty response" in str(exc_info.value)
 
-    async def test_get_track_pan(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_track_pan(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting track pan."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0, -0.3])
         mock_correlator.expect_response.return_value = future
 
@@ -648,7 +616,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track pan with single value response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0.5])
         mock_correlator.expect_response.return_value = future
 
@@ -666,7 +634,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track pan with empty response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -681,11 +649,9 @@ class TestAbletonOSCGateway:
 
         assert "Empty response" in str(exc_info.value)
 
-    async def test_get_track_mute(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_track_mute(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting track mute state."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0, 1])
         mock_correlator.expect_response.return_value = future
 
@@ -703,7 +669,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track mute with single value response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0])
         mock_correlator.expect_response.return_value = future
 
@@ -721,7 +687,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track mute with empty response returns False."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -735,11 +701,9 @@ class TestAbletonOSCGateway:
 
         assert muted is False
 
-    async def test_get_track_solo(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_track_solo(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting track solo state."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0, 1])
         mock_correlator.expect_response.return_value = future
 
@@ -757,7 +721,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track solo with single value response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([1])
         mock_correlator.expect_response.return_value = future
 
@@ -775,7 +739,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track solo with empty response returns False."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -789,11 +753,9 @@ class TestAbletonOSCGateway:
 
         assert soloed is False
 
-    async def test_get_track_arm(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_track_arm(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting track arm state."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0, 1])
         mock_correlator.expect_response.return_value = future
 
@@ -811,7 +773,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track arm with single value response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0])
         mock_correlator.expect_response.return_value = future
 
@@ -829,7 +791,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting track arm with empty response returns False."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -847,7 +809,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test checking if track has MIDI input."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0, 1])
         mock_correlator.expect_response.return_value = future
 
@@ -865,7 +827,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test track MIDI input with single value response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([1])
         mock_correlator.expect_response.return_value = future
 
@@ -883,7 +845,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test track MIDI input with empty response returns False."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -897,9 +859,7 @@ class TestAbletonOSCGateway:
 
         assert has_midi is False
 
-    async def test_create_midi_track(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_create_midi_track(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test creating MIDI track."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -910,9 +870,7 @@ class TestAbletonOSCGateway:
 
         mock_transport.send.assert_called_with("/live/song/create_midi_track", [2])
 
-    async def test_create_audio_track(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_create_audio_track(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test creating audio track."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -923,9 +881,7 @@ class TestAbletonOSCGateway:
 
         mock_transport.send.assert_called_with("/live/song/create_audio_track", [3])
 
-    async def test_delete_track(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_delete_track(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test deleting track."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -936,9 +892,7 @@ class TestAbletonOSCGateway:
 
         mock_transport.send.assert_called_with("/live/song/delete_track", [1])
 
-    async def test_fire_clip(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_fire_clip(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test firing a clip."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -949,9 +903,7 @@ class TestAbletonOSCGateway:
 
         mock_transport.send.assert_called_with("/live/clip_slot/fire", [0, 1])
 
-    async def test_stop_clip(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_stop_clip(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test stopping a clip."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -962,9 +914,7 @@ class TestAbletonOSCGateway:
 
         mock_transport.send.assert_called_with("/live/clip_slot/stop", [0, 1])
 
-    async def test_create_clip(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_create_clip(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test creating a clip."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -975,9 +925,7 @@ class TestAbletonOSCGateway:
 
         mock_transport.send.assert_called_with("/live/clip_slot/create_clip", [0, 1, 4.0])
 
-    async def test_delete_clip(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_delete_clip(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test deleting a clip."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -988,9 +936,7 @@ class TestAbletonOSCGateway:
 
         mock_transport.send.assert_called_with("/live/clip_slot/delete_clip", [0, 1])
 
-    async def test_add_note_with_mute(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_add_note_with_mute(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test adding a muted MIDI note."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -1012,9 +958,7 @@ class TestAbletonOSCGateway:
             [0, 0, 64, 1.0, 0.5, 80, 1],
         )
 
-    async def test_remove_notes(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_remove_notes(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test removing notes from a clip."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -1035,11 +979,9 @@ class TestAbletonOSCGateway:
             [0, 0, 0.0, 4.0, 60, 12],
         )
 
-    async def test_get_clip_notes(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_clip_notes(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting clip notes."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         # Response format: [track_id, clip_id, pitch, start, duration, velocity, mute, ...]
         future.set_result([0, 0, 60, 0.0, 1.0, 100, 0, 64, 1.0, 0.5, 80, 1])
         mock_correlator.expect_response.return_value = future
@@ -1061,11 +1003,9 @@ class TestAbletonOSCGateway:
         assert notes[1]["pitch"] == 64
         assert notes[1]["mute"] is True
 
-    async def test_get_clip_notes_empty(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_clip_notes_empty(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting notes from empty clip."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([0, 0])  # Just track_id and clip_id
         mock_correlator.expect_response.return_value = future
 
@@ -1083,7 +1023,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting notes with no response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -1097,11 +1037,9 @@ class TestAbletonOSCGateway:
 
         assert len(notes) == 0
 
-    async def test_get_device_parameters(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_get_device_parameters(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test getting device parameters."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         # Response format: [param_count, id1, name1, value1, min1, max1, ...]
         future.set_result([2, 0, "Freq", 1000.0, 20.0, 20000.0, 1, "Gain", 0.5, 0.0, 1.0])
         mock_correlator.expect_response.return_value = future
@@ -1127,7 +1065,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test getting device parameters with empty response."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([])
         mock_correlator.expect_response.return_value = future
 
@@ -1141,9 +1079,7 @@ class TestAbletonOSCGateway:
 
         assert len(params) == 0
 
-    async def test_set_device_parameter(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_set_device_parameter(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test setting device parameter."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -1157,9 +1093,7 @@ class TestAbletonOSCGateway:
             [0, 0, 1, 0.75],
         )
 
-    async def test_bypass_device(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_bypass_device(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test bypassing a device."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -1173,9 +1107,7 @@ class TestAbletonOSCGateway:
             [0, 0, 0],  # 0 means bypassed/disabled
         )
 
-    async def test_enable_device(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_enable_device(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test enabling a device."""
         gateway = AbletonOSCGateway(
             transport=mock_transport,
@@ -1189,11 +1121,9 @@ class TestAbletonOSCGateway:
             [0, 0, 1],  # 1 means enabled
         )
 
-    async def test_request_timeout(
-        self, mock_transport: Mock, mock_correlator: Mock
-    ) -> None:
+    async def test_request_timeout(self, mock_transport: Mock, mock_correlator: Mock) -> None:
         """Test request timeout handling."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         mock_correlator.expect_response.return_value = future
 
         gateway = AbletonOSCGateway(
@@ -1209,7 +1139,7 @@ class TestAbletonOSCGateway:
         self, mock_transport: Mock, mock_correlator: Mock
     ) -> None:
         """Test request with custom timeout."""
-        future: asyncio.Future[List[Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[list[Any]] = asyncio.get_event_loop().create_future()
         future.set_result([120.0])
         mock_correlator.expect_response.return_value = future
 

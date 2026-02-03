@@ -12,7 +12,7 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Optional, cast
+from typing import cast
 
 import structlog
 
@@ -62,9 +62,9 @@ class JSONFileHandler(RotatingFileHandler):
 
 
 def setup_logging(
-    log_level: Optional[int] = None,
-    log_file: Optional[Path] = None,
-    log_to_console: Optional[bool] = None,
+    log_level: int | None = None,
+    log_file: Path | None = None,
+    log_to_console: bool | None = None,
 ) -> None:
     """Configure structured logging with JSON output to file.
 
@@ -135,4 +135,4 @@ def get_logger(name: str) -> structlog.stdlib.BoundLogger:
     Returns:
         Configured structlog logger
     """
-    return cast(structlog.stdlib.BoundLogger, structlog.get_logger(name))
+    return cast("structlog.stdlib.BoundLogger", structlog.get_logger(name))

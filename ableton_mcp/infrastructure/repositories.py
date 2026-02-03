@@ -5,7 +5,6 @@ in concurrent async contexts.
 """
 
 import asyncio
-from typing import List, Optional
 
 from ableton_mcp.domain.entities import (
     AnalysisResult,
@@ -31,10 +30,10 @@ class InMemorySongRepository(SongRepository):
     """
 
     def __init__(self) -> None:
-        self._current_song: Optional[Song] = None
+        self._current_song: Song | None = None
         self._lock = asyncio.Lock()
 
-    async def get_current_song(self) -> Optional[Song]:
+    async def get_current_song(self) -> Song | None:
         """Get the currently loaded song."""
         async with self._lock:
             return self._current_song
@@ -61,12 +60,12 @@ class InMemoryTrackRepository(TrackRepository):
         self._tracks: dict[str, Track] = {}
         self._lock = asyncio.Lock()
 
-    async def get_track(self, track_id: EntityId) -> Optional[Track]:
+    async def get_track(self, track_id: EntityId) -> Track | None:
         """Get track by ID."""
         async with self._lock:
             return self._tracks.get(track_id.value)
 
-    async def get_tracks_by_song(self, song_id: EntityId) -> List[Track]:
+    async def get_tracks_by_song(self, song_id: EntityId) -> list[Track]:
         """Get all tracks for a song."""
         async with self._lock:
             # In a real implementation, this would filter by song_id
@@ -99,12 +98,12 @@ class InMemoryDeviceRepository(DeviceRepository):
         self._devices: dict[str, Device] = {}
         self._lock = asyncio.Lock()
 
-    async def get_device(self, device_id: EntityId) -> Optional[Device]:
+    async def get_device(self, device_id: EntityId) -> Device | None:
         """Get device by ID."""
         async with self._lock:
             return self._devices.get(device_id.value)
 
-    async def get_devices_by_track(self, track_id: EntityId) -> List[Device]:
+    async def get_devices_by_track(self, track_id: EntityId) -> list[Device]:
         """Get all devices for a track."""
         async with self._lock:
             # In a real implementation, this would filter by track_id
@@ -137,12 +136,12 @@ class InMemoryClipRepository(ClipRepository):
         self._clips: dict[str, Clip] = {}
         self._lock = asyncio.Lock()
 
-    async def get_clip(self, clip_id: EntityId) -> Optional[Clip]:
+    async def get_clip(self, clip_id: EntityId) -> Clip | None:
         """Get clip by ID."""
         async with self._lock:
             return self._clips.get(clip_id.value)
 
-    async def get_clips_by_track(self, track_id: EntityId) -> List[Optional[Clip]]:
+    async def get_clips_by_track(self, track_id: EntityId) -> list[Clip | None]:
         """Get all clips for a track."""
         async with self._lock:
             # In a real implementation, this would filter by track_id
@@ -180,12 +179,12 @@ class InMemoryAnalysisRepository(AnalysisRepository):
         async with self._lock:
             self._analyses[result.id.value] = result
 
-    async def get_analysis(self, result_id: EntityId) -> Optional[AnalysisResult]:
+    async def get_analysis(self, result_id: EntityId) -> AnalysisResult | None:
         """Get analysis result by ID."""
         async with self._lock:
             return self._analyses.get(result_id.value)
 
-    async def get_analyses_by_type(self, analysis_type: str) -> List[AnalysisResult]:
+    async def get_analyses_by_type(self, analysis_type: str) -> list[AnalysisResult]:
         """Get all analysis results of a specific type."""
         async with self._lock:
             return [

@@ -11,7 +11,9 @@
       "Bash(pytest:*)",
       "mcp__ableton-live__add_notes",
       "mcp__ableton-live__get_clip_content",
-      "mcp__ableton-live__analyze_harmony"
+      "mcp__ableton-live__analyze_harmony",
+      "Bash(wc:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

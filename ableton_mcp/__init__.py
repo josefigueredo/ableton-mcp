@@ -9,8 +9,8 @@ of concerns, dependency inversion, and enterprise-grade patterns.
 """
 
 __version__ = "1.0.0"
-__author__ = "Ableton MCP Team"
+__author__ = "Jose Figueredo"
 
 from ableton_mcp.core.exceptions import AbletonMCPError
 
-__all__ = ["AbletonMCPError", "__version__", "__author__"]
+__all__ = ["AbletonMCPError", "__author__", "__version__"]

@@ -1,7 +1,6 @@
 """Repository interfaces defining data access contracts."""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
 from ableton_mcp.domain.entities import (
     AnalysisResult,
@@ -17,7 +16,7 @@ class SongRepository(ABC):
     """Repository for managing song data."""
 
     @abstractmethod
-    async def get_current_song(self) -> Optional[Song]:
+    async def get_current_song(self) -> Song | None:
         """Get the currently loaded song."""
         pass
 
@@ -36,12 +35,12 @@ class TrackRepository(ABC):
     """Repository for managing track data."""
 
     @abstractmethod
-    async def get_track(self, track_id: EntityId) -> Optional[Track]:
+    async def get_track(self, track_id: EntityId) -> Track | None:
         """Get track by ID."""
         pass
 
     @abstractmethod
-    async def get_tracks_by_song(self, song_id: EntityId) -> List[Track]:
+    async def get_tracks_by_song(self, song_id: EntityId) -> list[Track]:
         """Get all tracks for a song."""
         pass
 
@@ -65,12 +64,12 @@ class DeviceRepository(ABC):
     """Repository for managing device data."""
 
     @abstractmethod
-    async def get_device(self, device_id: EntityId) -> Optional[Device]:
+    async def get_device(self, device_id: EntityId) -> Device | None:
         """Get device by ID."""
         pass
 
     @abstractmethod
-    async def get_devices_by_track(self, track_id: EntityId) -> List[Device]:
+    async def get_devices_by_track(self, track_id: EntityId) -> list[Device]:
         """Get all devices for a track."""
         pass
 
@@ -94,12 +93,12 @@ class ClipRepository(ABC):
     """Repository for managing clip data."""
 
     @abstractmethod
-    async def get_clip(self, clip_id: EntityId) -> Optional[Clip]:
+    async def get_clip(self, clip_id: EntityId) -> Clip | None:
         """Get clip by ID."""
         pass
 
     @abstractmethod
-    async def get_clips_by_track(self, track_id: EntityId) -> List[Optional[Clip]]:
+    async def get_clips_by_track(self, track_id: EntityId) -> list[Clip | None]:
         """Get all clips for a track."""
         pass
 
@@ -128,12 +127,12 @@ class AnalysisRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_analysis(self, result_id: EntityId) -> Optional[AnalysisResult]:
+    async def get_analysis(self, result_id: EntityId) -> AnalysisResult | None:
         """Get analysis result by ID."""
         pass
 
     @abstractmethod
-    async def get_analyses_by_type(self, analysis_type: str) -> List[AnalysisResult]:
+    async def get_analyses_by_type(self, analysis_type: str) -> list[AnalysisResult]:
         """Get all analysis results of a specific type."""
         pass
 

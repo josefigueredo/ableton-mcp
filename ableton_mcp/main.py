@@ -13,7 +13,7 @@ from ableton_mcp.core.logging import get_logger, setup_logging
 def display_banner() -> None:
     """Display startup banner."""
     console = Console()
-    
+
     banner = """
 +------------------------------------------------------+
 |                                                      |
@@ -35,7 +35,7 @@ def display_banner() -> None:
 |                                                      |
 +------------------------------------------------------+
 """
-    
+
     console.print(banner, style="bold cyan")
     console.print("Starting MCP server...\n", style="bold green")
 
@@ -46,29 +46,29 @@ async def main() -> None:
         # Setup logging (JSON output to file by default)
         setup_logging()
         logger = get_logger(__name__)
-        
+
         # Display banner
         display_banner()
-        
+
         # Create and configure container
         container = Container()
-        
+
         # Get MCP server instance
         mcp_server = container.mcp_server()
-        
+
         logger.info("Ableton Live MCP Server starting", version="1.0.0")
-        
+
         # Run the MCP server
         await mcp_server.run()
-        
+
     except KeyboardInterrupt:
         logger.info("Server shutdown requested by user")
         sys.exit(0)
-        
+
     except AbletonMCPError as e:
         logger.error("Application error", error=str(e), code=e.error_code)
         sys.exit(1)
-        
+
     except Exception as e:
         logger.error("Unexpected error", error=str(e), exc_info=True)
         sys.exit(1)

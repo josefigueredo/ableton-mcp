@@ -1,0 +1,80 @@
+# =============================================================================
+# Ableton Live MCP Server - Docker Compose
+# =============================================================================
+# Easy deployment for end users
+#
+# Quick Start:
+#   docker-compose up
+#
+# For different platforms, uncomment the appropriate section below.
+# =============================================================================
+
+services:
+  ableton-mcp:
+    image: ghcr.io/josefigueredo/ableton-mcp:latest
+    container_name: ableton-mcp
+
+    # -------------------------------------------------------------------------
+    # PLATFORM-SPECIFIC CONFIGURATION
+    # Uncomment ONE of the following sections based on your operating system
+    # -------------------------------------------------------------------------
+
+    # --- LINUX: Use host networking (recommended) ---
+    # network_mode: host
+
+    # --- macOS / Windows: Use port mapping ---
+    ports:
+      - "11000:11000/udp"
+      - "11001:11001/udp"
+    environment:
+      - ABLETON_OSC_HOST=host.docker.internal
+      # Add extra hosts for Docker Desktop compatibility
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    # -------------------------------------------------------------------------
+    # Common configuration
+    # -------------------------------------------------------------------------
+    environment:
+      # OSC Configuration
+      - ABLETON_OSC_HOST=${ABLETON_OSC_HOST:-host.docker.internal}
+      - ABLETON_OSC_SEND_PORT=${ABLETON_OSC_SEND_PORT:-11000}
+      - ABLETON_OSC_RECEIVE_PORT=${ABLETON_OSC_RECEIVE_PORT:-11001}
+      # Logging
+      - ABLETON_MCP_LOG_LEVEL=${ABLETON_MCP_LOG_LEVEL:-INFO}
+      - ABLETON_MCP_LOG_TO_CONSOLE=true
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "print('healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# =============================================================================
+# Alternative configurations (copy and modify as needed)
+# =============================================================================
+
+# --- Linux with host networking ---
+# services:
+#   ableton-mcp:
+#     image: ghcr.io/josefigueredo/ableton-mcp:latest
+#     network_mode: host
+#     environment:
+#       - ABLETON_OSC_HOST=127.0.0.1
+#       - ABLETON_MCP_LOG_LEVEL=INFO
+#     restart: unless-stopped
+
+# --- Custom Ableton host (remote machine) ---
+# services:
+#   ableton-mcp:
+#     image: ghcr.io/josefigueredo/ableton-mcp:latest
+#     environment:
+#       - ABLETON_OSC_HOST=192.168.1.100
+#       - ABLETON_OSC_SEND_PORT=11000
+#       - ABLETON_OSC_RECEIVE_PORT=11001
+#     restart: unless-stopped

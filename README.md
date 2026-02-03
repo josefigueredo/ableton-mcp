@@ -4,10 +4,13 @@
 
 A sophisticated Model Context Protocol (MCP) server that transforms any AI assistant into an expert Ableton Live collaborator with deep music production knowledge and real-time DAW control.
 
+[![Tests](https://github.com/josefigueredo/ableton-mcp/actions/workflows/tests.yml/badge.svg)](https://github.com/josefigueredo/ableton-mcp/actions/workflows/tests.yml)
+[![Lint](https://github.com/josefigueredo/ableton-mcp/actions/workflows/lint.yml/badge.svg)](https://github.com/josefigueredo/ableton-mcp/actions/workflows/lint.yml)
+[![codecov](https://codecov.io/gh/josefigueredo/ableton-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/josefigueredo/ableton-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Clean Architecture](https://img.shields.io/badge/architecture-clean-green.svg)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-[![SOLID Principles](https://img.shields.io/badge/design-SOLID-orange.svg)](https://en.wikipedia.org/wiki/SOLID)
-[![Type Hints](https://img.shields.io/badge/typing-strict-red.svg)](https://docs.python.org/3/library/typing.html)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)](https://github.com/josefigueredo/ableton-mcp/pkgs/container/ableton-mcp)
 
 ## 🚀 Features
 
@@ -48,14 +51,39 @@ A sophisticated Model Context Protocol (MCP) server that transforms any AI assis
 
 ## 🔧 Installation
 
-### 1. Clone and Setup
+Choose your preferred installation method:
+
+### Option 1: Docker (Recommended)
+
+The easiest way to get started. No Python installation required.
+
 ```bash
-git clone <repository-url>
-cd ableton-live-mcp
+# Pull and run (Linux)
+docker run --network host ghcr.io/josefigueredo/ableton-mcp:latest
+
+# Pull and run (macOS / Windows)
+docker run -p 11000:11000/udp -p 11001:11001/udp \
+  -e ABLETON_OSC_HOST=host.docker.internal \
+  ghcr.io/josefigueredo/ableton-mcp:latest
 ```
 
-### 2. Install Dependencies
+Or use Docker Compose:
+
 ```bash
+# Download docker-compose.yml and run
+curl -O https://raw.githubusercontent.com/josefigueredo/ableton-mcp/main/docker-compose.yml
+docker-compose up
+```
+
+### Option 2: Python (For Development)
+
+Best for debugging and contributing to the project.
+
+```bash
+# Clone the repository
+git clone https://github.com/josefigueredo/ableton-mcp.git
+cd ableton-mcp
+
 # Create virtual environment
 python -m venv venv
 
@@ -67,26 +95,41 @@ source venv/bin/activate
 
 # Install package in development mode
 pip install -e .
-```
 
-### 3. Install Development Dependencies (Optional)
-```bash
+# Install development dependencies (optional)
 pip install -e ".[dev]"
 ```
 
-### 4. Configure AbletonOSC
-1. Install the AbletonOSC remote script in Ableton Live
-2. Enable the script in Live's MIDI preferences
-3. Ensure OSC ports 11000-11001 are available
+### Configure AbletonOSC (Required for both methods)
+
+1. Download [AbletonOSC](https://github.com/ideoforms/AbletonOSC)
+2. Copy the `AbletonOSC` folder to your Ableton MIDI Remote Scripts directory:
+   - **Windows**: `C:\ProgramData\Ableton\Live x.x\Resources\MIDI Remote Scripts\`
+   - **macOS**: `/Applications/Ableton Live x.x/Contents/App-Resources/MIDI Remote Scripts/`
+3. Restart Ableton Live
+4. Go to **Preferences > Link/Tempo/MIDI** and select `AbletonOSC` in a Control Surface slot
 
 ## 🎯 Quick Start
 
-### Basic Usage
+### Starting the Server
+
+**Docker:**
+```bash
+# Linux (uses host networking)
+docker run --network host ghcr.io/josefigueredo/ableton-mcp:latest
+
+# macOS / Windows
+docker run -p 11000:11000/udp -p 11001:11001/udp \
+  -e ABLETON_OSC_HOST=host.docker.internal \
+  ghcr.io/josefigueredo/ableton-mcp:latest
+```
+
+**Python:**
 ```bash
 # Start the MCP server
 ableton-mcp
 
-# Or run directly
+# Or run directly (useful for debugging)
 python -m ableton_mcp.main
 ```
 
@@ -259,21 +302,72 @@ container.config.osc.host.from_env("ABLETON_OSC_HOST", default="127.0.0.1")
 container.config.osc.send_port.from_env("ABLETON_OSC_SEND_PORT", default=11000)
 ```
 
-## 🚀 Production Deployment
+## 🔒 Security
 
-### Docker Deployment
-```dockerfile
-FROM python:3.11-slim
+### Network Security Considerations
 
-WORKDIR /app
-COPY . .
-RUN pip install -e .
+This application uses **OSC (Open Sound Control)** over UDP for communication with Ableton Live. Important security notes:
 
-EXPOSE 11000 11001
-CMD ["ableton-mcp"]
+- **Local use only**: OSC communication is unencrypted and designed for local DAW control
+- **Default binding**: The server binds to `127.0.0.1` (localhost) by default
+- **Do not expose to untrusted networks**: Never expose ports 11000-11001 to the internet or untrusted networks
+- **Firewall configuration**: Ensure your firewall restricts OSC ports to localhost only
+
+```bash
+# Example: Linux firewall rule to restrict OSC ports to localhost
+sudo iptables -A INPUT -p udp --dport 11000:11001 -s 127.0.0.1 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 11000:11001 -j DROP
 ```
 
-### Systemd Service
+### Security Scanning
+
+The project includes automated security scanning in CI/CD:
+
+- **pip-audit**: Weekly dependency vulnerability scanning
+- **CodeQL**: Static code analysis for security issues
+
+For a complete security assessment, see [docs/SECURITY_ASSESSMENT.md](docs/SECURITY_ASSESSMENT.md).
+
+## 🚀 Production Deployment
+
+### Docker (Recommended)
+
+The official Docker image is available on GitHub Container Registry:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/josefigueredo/ableton-mcp:latest
+
+# Run with environment configuration
+docker run -d \
+  --name ableton-mcp \
+  --restart unless-stopped \
+  --network host \
+  -e ABLETON_MCP_LOG_LEVEL=INFO \
+  ghcr.io/josefigueredo/ableton-mcp:latest
+```
+
+**Using Docker Compose:**
+```yaml
+# docker-compose.yml
+services:
+  ableton-mcp:
+    image: ghcr.io/josefigueredo/ableton-mcp:latest
+    network_mode: host  # Linux
+    # For macOS/Windows, use ports instead:
+    # ports:
+    #   - "11000:11000/udp"
+    #   - "11001:11001/udp"
+    environment:
+      - ABLETON_OSC_HOST=127.0.0.1
+      - ABLETON_MCP_LOG_LEVEL=INFO
+    restart: unless-stopped
+```
+
+### Systemd Service (Linux)
+
+For running directly on the host without Docker:
+
 ```ini
 [Unit]
 Description=Ableton Live MCP Server
@@ -285,6 +379,7 @@ User=music
 ExecStart=/usr/local/bin/ableton-mcp
 Restart=on-failure
 RestartSec=10
+Environment=ABLETON_MCP_LOG_LEVEL=INFO
 
 [Install]
 WantedBy=multi-user.target

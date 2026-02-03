@@ -44,16 +44,12 @@ class TestInMemorySongRepository:
             tracks=[],
         )
 
-    async def test_get_current_song_when_empty(
-        self, repository: InMemorySongRepository
-    ) -> None:
+    async def test_get_current_song_when_empty(self, repository: InMemorySongRepository) -> None:
         """Test getting current song when none exists."""
         result = await repository.get_current_song()
         assert result is None
 
-    async def test_save_song(
-        self, repository: InMemorySongRepository, sample_song: Song
-    ) -> None:
+    async def test_save_song(self, repository: InMemorySongRepository, sample_song: Song) -> None:
         """Test saving a song."""
         await repository.save_song(sample_song)
         result = await repository.get_current_song()
@@ -61,9 +57,7 @@ class TestInMemorySongRepository:
         assert result.id == sample_song.id
         assert result.name == sample_song.name
 
-    async def test_update_song(
-        self, repository: InMemorySongRepository, sample_song: Song
-    ) -> None:
+    async def test_update_song(self, repository: InMemorySongRepository, sample_song: Song) -> None:
         """Test updating a song."""
         # First save the song
         await repository.save_song(sample_song)
@@ -133,9 +127,7 @@ class TestInMemoryTrackRepository:
             is_armed=False,
         )
 
-    async def test_get_track_when_empty(
-        self, repository: InMemoryTrackRepository
-    ) -> None:
+    async def test_get_track_when_empty(self, repository: InMemoryTrackRepository) -> None:
         """Test getting a track when none exists."""
         result = await repository.get_track(EntityId("nonexistent"))
         assert result is None
@@ -209,9 +201,7 @@ class TestInMemoryTrackRepository:
         result = await repository.get_track(sample_track.id)
         assert result is None
 
-    async def test_delete_nonexistent_track(
-        self, repository: InMemoryTrackRepository
-    ) -> None:
+    async def test_delete_nonexistent_track(self, repository: InMemoryTrackRepository) -> None:
         """Test deleting a track that doesn't exist."""
         # Should not raise
         await repository.delete_track(EntityId("nonexistent"))
@@ -244,9 +234,7 @@ class TestInMemoryDeviceRepository:
             ],
         )
 
-    async def test_get_device_when_empty(
-        self, repository: InMemoryDeviceRepository
-    ) -> None:
+    async def test_get_device_when_empty(self, repository: InMemoryDeviceRepository) -> None:
         """Test getting a device when none exists."""
         result = await repository.get_device(EntityId("nonexistent"))
         assert result is None
@@ -312,9 +300,7 @@ class TestInMemoryDeviceRepository:
         result = await repository.get_device(sample_device.id)
         assert result is None
 
-    async def test_delete_nonexistent_device(
-        self, repository: InMemoryDeviceRepository
-    ) -> None:
+    async def test_delete_nonexistent_device(self, repository: InMemoryDeviceRepository) -> None:
         """Test deleting a device that doesn't exist."""
         # Should not raise
         await repository.delete_device(EntityId("nonexistent"))
@@ -347,16 +333,12 @@ class TestInMemoryClipRepository:
             ],
         )
 
-    async def test_get_clip_when_empty(
-        self, repository: InMemoryClipRepository
-    ) -> None:
+    async def test_get_clip_when_empty(self, repository: InMemoryClipRepository) -> None:
         """Test getting a clip when none exists."""
         result = await repository.get_clip(EntityId("nonexistent"))
         assert result is None
 
-    async def test_create_clip(
-        self, repository: InMemoryClipRepository, sample_clip: Clip
-    ) -> None:
+    async def test_create_clip(self, repository: InMemoryClipRepository, sample_clip: Clip) -> None:
         """Test creating a clip."""
         await repository.create_clip(sample_clip)
         result = await repository.get_clip(sample_clip.id)
@@ -385,9 +367,7 @@ class TestInMemoryClipRepository:
 
         assert len(clips) == 2
 
-    async def test_update_clip(
-        self, repository: InMemoryClipRepository, sample_clip: Clip
-    ) -> None:
+    async def test_update_clip(self, repository: InMemoryClipRepository, sample_clip: Clip) -> None:
         """Test updating a clip."""
         await repository.create_clip(sample_clip)
 
@@ -408,9 +388,7 @@ class TestInMemoryClipRepository:
         assert result.length == 8.0
         assert result.is_playing is True
 
-    async def test_delete_clip(
-        self, repository: InMemoryClipRepository, sample_clip: Clip
-    ) -> None:
+    async def test_delete_clip(self, repository: InMemoryClipRepository, sample_clip: Clip) -> None:
         """Test deleting a clip."""
         await repository.create_clip(sample_clip)
         await repository.delete_clip(sample_clip.id)
@@ -418,9 +396,7 @@ class TestInMemoryClipRepository:
         result = await repository.get_clip(sample_clip.id)
         assert result is None
 
-    async def test_delete_nonexistent_clip(
-        self, repository: InMemoryClipRepository
-    ) -> None:
+    async def test_delete_nonexistent_clip(self, repository: InMemoryClipRepository) -> None:
         """Test deleting a clip that doesn't exist."""
         # Should not raise
         await repository.delete_clip(EntityId("nonexistent"))
@@ -444,9 +420,7 @@ class TestInMemoryAnalysisRepository:
             data={"key": "C major"},
         )
 
-    async def test_get_analysis_when_empty(
-        self, repository: InMemoryAnalysisRepository
-    ) -> None:
+    async def test_get_analysis_when_empty(self, repository: InMemoryAnalysisRepository) -> None:
         """Test getting an analysis when none exists."""
         result = await repository.get_analysis(EntityId("nonexistent"))
         assert result is None

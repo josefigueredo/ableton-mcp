@@ -1,6 +1,5 @@
 """Unit tests for ValidationService."""
 
-import pytest
 
 from ableton_mcp.domain.entities import (
     Clip,

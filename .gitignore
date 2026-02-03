@@ -26,8 +26,12 @@ Thumbs.db
 *.log
 logs/
 
-OldCode
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 .coverage
 htmlcov/
+work1 Project/
+.claude/
+.context/
+.hypothesis/

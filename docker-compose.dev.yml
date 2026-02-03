@@ -1,0 +1,76 @@
+# Docker Compose configuration for development
+#
+# Usage:
+#   docker-compose -f docker-compose.dev.yml up --build
+#
+# Services:
+#   - dev: Main development container with hot-reload
+#   - test: Run test suite
+#   - lint: Run linting and type checking
+
+services:
+  # Main development service
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/.venv  # Don't overwrite venv
+    ports:
+      - "11000:11000/udp"
+      - "11001:11001/udp"
+    environment:
+      - ABLETON_MCP_LOG_LEVEL=DEBUG
+      - ABLETON_MCP_LOG_TO_CONSOLE=true
+      - ABLETON_OSC_HOST=host.docker.internal
+    # Keep container running for interactive development
+    command: tail -f /dev/null
+    stdin_open: true
+    tty: true
+
+  # Test runner service
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      - ABLETON_MCP_LOG_LEVEL=WARNING
+    command: pytest --cov=ableton_mcp --cov-report=term-missing -v
+
+  # Lint and type check service
+  lint:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/.venv
+    command: >
+      sh -c "
+        echo '=== Black (Formatting) ===' &&
+        black --check ableton_mcp/ tests/ &&
+        echo '=== Ruff (Linting) ===' &&
+        ruff check ableton_mcp/ tests/ &&
+        echo '=== Mypy (Type Checking) ===' &&
+        mypy ableton_mcp/ &&
+        echo '=== All checks passed! ==='
+      "
+
+  # Coverage report generator
+  coverage:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/.venv
+      - ./htmlcov:/app/htmlcov
+    command: >
+      sh -c "
+        pytest --cov=ableton_mcp --cov-report=html --cov-report=term-missing &&
+        echo 'Coverage report generated in htmlcov/'
+      "

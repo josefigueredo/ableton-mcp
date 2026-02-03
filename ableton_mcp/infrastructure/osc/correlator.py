@@ -6,7 +6,7 @@ This module correlates requests with their responses using FIFO queues.
 
 import asyncio
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import structlog
 
@@ -26,7 +26,7 @@ class PendingRequest:
     """
 
     address: str
-    future: asyncio.Future[List[Any]]
+    future: asyncio.Future[list[Any]]
     timestamp: float
 
 
@@ -44,14 +44,14 @@ class OSCCorrelator:
             default_timeout: Default timeout for waiting on responses
         """
         # Use regular dict instead of defaultdict to avoid creating Queue outside async context
-        self._pending: Dict[str, asyncio.Queue[PendingRequest]] = {}
+        self._pending: dict[str, asyncio.Queue[PendingRequest]] = {}
         self._default_timeout = default_timeout
 
     async def expect_response(
         self,
         address: str,
-        timeout: Optional[float] = None,
-    ) -> asyncio.Future[List[Any]]:
+        timeout: float | None = None,
+    ) -> asyncio.Future[list[Any]]:
         """Register expectation for a response on an address.
 
         Args:
@@ -62,7 +62,7 @@ class OSCCorrelator:
             Future that will be resolved with the response args
         """
         loop = asyncio.get_running_loop()
-        future: asyncio.Future[List[Any]] = loop.create_future()
+        future: asyncio.Future[list[Any]] = loop.create_future()
 
         request = PendingRequest(
             address=address,
@@ -79,7 +79,7 @@ class OSCCorrelator:
         logger.debug("Registered pending request", address=address)
         return future
 
-    def handle_response(self, address: str, args: List[Any]) -> bool:
+    def handle_response(self, address: str, args: list[Any]) -> bool:
         """Handle an incoming response for an address.
 
         Args:
@@ -120,8 +120,8 @@ class OSCCorrelator:
     async def wait_for_response(
         self,
         address: str,
-        timeout: Optional[float] = None,
-    ) -> List[Any]:
+        timeout: float | None = None,
+    ) -> list[Any]:
         """Wait for a response on an address.
 
         This is a convenience method that combines expect_response and await.
@@ -141,15 +141,13 @@ class OSCCorrelator:
 
         try:
             return await asyncio.wait_for(future, timeout=effective_timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             # Clean up the timed-out request from the queue to prevent memory leak
             self._cleanup_timed_out_request(address, future)
             logger.warning("Request timed out", address=address, timeout=effective_timeout)
             raise
 
-    def _cleanup_timed_out_request(
-        self, address: str, future: asyncio.Future[List[Any]]
-    ) -> None:
+    def _cleanup_timed_out_request(self, address: str, future: asyncio.Future[list[Any]]) -> None:
         """Remove a timed-out request from the queue.
 
         This prevents memory leaks from accumulating timed-out futures.
@@ -159,7 +157,7 @@ class OSCCorrelator:
             return
 
         # Drain and rebuild the queue without the timed-out future
-        remaining: List[PendingRequest] = []
+        remaining: list[PendingRequest] = []
         while not queue.empty():
             try:
                 request = queue.get_nowait()
@@ -177,7 +175,7 @@ class OSCCorrelator:
 
         Useful during disconnect to clean up.
         """
-        for address, queue in self._pending.items():
+        for _address, queue in self._pending.items():
             while not queue.empty():
                 try:
                     request = queue.get_nowait()

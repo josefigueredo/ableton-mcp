@@ -1,0 +1,90 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please fill out the form below.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? Is this related to a frustration?
+      placeholder: "I'm always frustrated when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see.
+      placeholder: Describe your proposed solution...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you've considered.
+      placeholder: Other approaches you've thought about...
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What area of the project does this feature relate to?
+      options:
+        - OSC Communication
+        - Music Theory / Harmony
+        - Mixing / Audio Analysis
+        - Arrangement / Structure
+        - Track Operations
+        - Clip Operations
+        - Device Control
+        - Documentation
+        - Developer Experience
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Nice to have
+        - Would be helpful
+        - Important for my workflow
+        - Critical / Blocking
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Describe specific use cases or scenarios where this feature would be helpful.
+      placeholder: |
+        1. When producing electronic music, I want to...
+        2. During mixing, it would help to...
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, mockups, or examples about the feature request.
+      placeholder: Any additional information, screenshots, or mockups...
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be willing to help implement this feature?
+      options:
+        - label: I would be willing to submit a PR for this feature

@@ -1,7 +1,6 @@
 """MCP server implementation providing tools for Ableton Live control."""
 
-import asyncio
-from typing import Any, Dict, List
+from typing import Any
 
 import mcp.server.stdio
 import mcp.types as types
@@ -77,7 +76,7 @@ class AbletonMCPServer:
         """Setup MCP tool handlers."""
 
         @self.server.list_tools()
-        async def handle_list_tools() -> List[types.Tool]:
+        async def handle_list_tools() -> list[types.Tool]:
             """List available tools for Ableton Live control and music production."""
             return [
                 types.Tool(
@@ -408,7 +407,7 @@ class AbletonMCPServer:
             ]
 
         @self.server.call_tool()
-        async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[types.TextContent]:
+        async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
             """Handle tool calls with comprehensive error handling."""
             try:
                 logger.info("Tool called", tool=name, arguments=arguments)
@@ -512,10 +511,12 @@ class AbletonMCPServer:
             except Exception as e:
                 logger.error("Unexpected error", tool=name, error=str(e))
                 return [
-                    types.TextContent(type="text", text=f"[ERROR] Unexpected error in {name}: {str(e)}")
+                    types.TextContent(
+                        type="text", text=f"[ERROR] Unexpected error in {name}: {e!s}"
+                    )
                 ]
 
-    async def _format_result(self, result: UseCaseResult) -> List[types.TextContent]:
+    async def _format_result(self, result: UseCaseResult) -> list[types.TextContent]:
         """Format use case result for MCP response."""
         if result.success:
             if result.data:
@@ -585,7 +586,7 @@ class AbletonMCPServer:
 
                 if data.get("chord_progressions"):
                     formatted_lines.append("\n**Suggested Chord Progressions**:")
-                    for i, progression in enumerate(data["chord_progressions"][:3]):
+                    for _i, progression in enumerate(data["chord_progressions"][:3]):
                         note_names = [
                             "C",
                             "C#",

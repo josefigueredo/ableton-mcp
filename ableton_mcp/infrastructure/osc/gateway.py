@@ -4,7 +4,7 @@ This implements the AbletonGateway port defined in the domain layer.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import structlog
 
@@ -25,8 +25,8 @@ class AbletonOSCGateway(AbletonGateway):
 
     def __init__(
         self,
-        transport: Optional[AsyncOSCTransport] = None,
-        correlator: Optional[OSCCorrelator] = None,
+        transport: AsyncOSCTransport | None = None,
+        correlator: OSCCorrelator | None = None,
         default_timeout: float = 5.0,
     ) -> None:
         """Initialize the gateway.
@@ -40,7 +40,7 @@ class AbletonOSCGateway(AbletonGateway):
         self._correlator = correlator or OSCCorrelator(default_timeout=default_timeout)
         self._default_timeout = default_timeout
 
-    def _handle_osc_message(self, address: str, args: List[Any]) -> None:
+    def _handle_osc_message(self, address: str, args: list[Any]) -> None:
         """Handle incoming OSC messages from transport."""
         self._correlator.handle_response(address, args)
 
@@ -66,7 +66,7 @@ class AbletonOSCGateway(AbletonGateway):
                     receive_port=receive_port,
                     tempo=tempo,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Ensure cleanup even if disconnect fails
                 try:
                     await self._transport.disconnect()
@@ -77,10 +77,10 @@ class AbletonOSCGateway(AbletonGateway):
                     )
                 raise ConnectionError(
                     "Ableton Live not responding. Is AbletonOSC installed and enabled?"
-                )
+                ) from None
 
         except OSError as e:
-            raise ConnectionError(f"Failed to connect to Ableton Live: {e}")
+            raise ConnectionError(f"Failed to connect to Ableton Live: {e}") from e
 
     async def disconnect(self) -> None:
         """Disconnect from Ableton Live."""
@@ -94,7 +94,7 @@ class AbletonOSCGateway(AbletonGateway):
 
     # Internal helpers
 
-    def _send(self, address: str, args: Optional[List[Any]] = None) -> None:
+    def _send(self, address: str, args: list[Any] | None = None) -> None:
         """Send an OSC message without waiting for response."""
         if not self.is_connected():
             raise OSCCommunicationError("Not connected to Ableton Live")
@@ -103,9 +103,9 @@ class AbletonOSCGateway(AbletonGateway):
     async def _request(
         self,
         address: str,
-        args: Optional[List[Any]] = None,
-        timeout: Optional[float] = None,
-    ) -> List[Any]:
+        args: list[Any] | None = None,
+        timeout: float | None = None,
+    ) -> list[Any]:
         """Send request and wait for response.
 
         Args:
@@ -133,7 +133,7 @@ class AbletonOSCGateway(AbletonGateway):
         effective_timeout = timeout if timeout is not None else self._default_timeout
         try:
             return await asyncio.wait_for(future, timeout=effective_timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning("Request timed out", address=address, timeout=effective_timeout)
             raise
 
@@ -172,7 +172,7 @@ class AbletonOSCGateway(AbletonGateway):
             raise OSCCommunicationError("Tempo must be between 20 and 999 BPM")
         self._send("/live/song/set/tempo", [bpm])
 
-    async def get_time_signature(self) -> Tuple[int, int]:
+    async def get_time_signature(self) -> tuple[int, int]:
         """Get time signature as (numerator, denominator)."""
         num_response = await self._request("/live/song/get/signature_numerator")
         denom_response = await self._request("/live/song/get/signature_denominator")
@@ -207,7 +207,9 @@ class AbletonOSCGateway(AbletonGateway):
         """Get track name."""
         response = await self._request("/live/track/get/name", [track_id])
         if not response:
-            raise OSCCommunicationError(f"Empty response from Ableton Live for track {track_id} name")
+            raise OSCCommunicationError(
+                f"Empty response from Ableton Live for track {track_id} name"
+            )
         # Response format: [track_id, name]
         return str(response[1]) if len(response) > 1 else str(response[0])
 
@@ -219,7 +221,9 @@ class AbletonOSCGateway(AbletonGateway):
         """Get track volume (0.0-1.0)."""
         response = await self._request("/live/track/get/volume", [track_id])
         if not response:
-            raise OSCCommunicationError(f"Empty response from Ableton Live for track {track_id} volume")
+            raise OSCCommunicationError(
+                f"Empty response from Ableton Live for track {track_id} volume"
+            )
         # Response format: [track_id, volume]
         return float(response[1]) if len(response) > 1 else float(response[0])
 
@@ -233,7 +237,9 @@ class AbletonOSCGateway(AbletonGateway):
         """Get track pan (-1.0 to 1.0)."""
         response = await self._request("/live/track/get/panning", [track_id])
         if not response:
-            raise OSCCommunicationError(f"Empty response from Ableton Live for track {track_id} pan")
+            raise OSCCommunicationError(
+                f"Empty response from Ableton Live for track {track_id} pan"
+            )
         # Response format: [track_id, pan]
         return float(response[1]) if len(response) > 1 else float(response[0])
 
@@ -306,9 +312,7 @@ class AbletonOSCGateway(AbletonGateway):
         """Stop a clip (fire-and-forget, no confirmation)."""
         self._send("/live/clip_slot/stop", [track_id, clip_id])
 
-    async def create_clip(
-        self, track_id: int, clip_id: int, length: float
-    ) -> None:
+    async def create_clip(self, track_id: int, clip_id: int, length: float) -> None:
         """Create a new MIDI clip (fire-and-forget, no confirmation)."""
         self._send("/live/clip_slot/create_clip", [track_id, clip_id, length])
 
@@ -347,15 +351,13 @@ class AbletonOSCGateway(AbletonGateway):
             [track_id, clip_id, start_time, time_span, pitch_start, pitch_span],
         )
 
-    async def get_clip_notes(
-        self, track_id: int, clip_id: int
-    ) -> List[Dict[str, Any]]:
+    async def get_clip_notes(self, track_id: int, clip_id: int) -> list[dict[str, Any]]:
         """Get all notes in a clip."""
         response = await self._request("/live/clip/get/notes", [track_id, clip_id])
 
         # AbletonOSC returns notes in flat format:
         # [track_id, clip_id, pitch1, start1, duration1, velocity1, mute1, ...]
-        notes: List[Dict[str, Any]] = []
+        notes: list[dict[str, Any]] = []
         if not response or len(response) < 2:
             return notes
 
@@ -367,29 +369,27 @@ class AbletonOSCGateway(AbletonGateway):
         for i in range(note_count):
             base = i * 5
             if base + 5 <= len(data):
-                notes.append({
-                    "pitch": int(data[base]),
-                    "start": float(data[base + 1]),
-                    "duration": float(data[base + 2]),
-                    "velocity": int(data[base + 3]),
-                    "mute": bool(data[base + 4]),
-                })
+                notes.append(
+                    {
+                        "pitch": int(data[base]),
+                        "start": float(data[base + 1]),
+                        "duration": float(data[base + 2]),
+                        "velocity": int(data[base + 3]),
+                        "mute": bool(data[base + 4]),
+                    }
+                )
 
         return notes
 
     # Device operations
 
-    async def get_device_parameters(
-        self, track_id: int, device_id: int
-    ) -> List[Dict[str, Any]]:
+    async def get_device_parameters(self, track_id: int, device_id: int) -> list[dict[str, Any]]:
         """Get device parameters."""
-        response = await self._request(
-            "/live/device/get/parameters", [track_id, device_id]
-        )
+        response = await self._request("/live/device/get/parameters", [track_id, device_id])
 
         # AbletonOSC returns parameters in flat format:
         # [param_count, id1, name1, value1, min1, max1, ...]
-        parameters: List[Dict[str, Any]] = []
+        parameters: list[dict[str, Any]] = []
         if not response:
             return parameters
 
@@ -400,13 +400,15 @@ class AbletonOSCGateway(AbletonGateway):
         for i in range(param_count):
             base = i * 5
             if base + 5 <= len(data):
-                parameters.append({
-                    "id": int(data[base]),
-                    "name": str(data[base + 1]),
-                    "value": float(data[base + 2]),
-                    "min": float(data[base + 3]),
-                    "max": float(data[base + 4]),
-                })
+                parameters.append(
+                    {
+                        "id": int(data[base]),
+                        "name": str(data[base + 1]),
+                        "value": float(data[base + 2]),
+                        "min": float(data[base + 3]),
+                        "max": float(data[base + 4]),
+                    }
+                )
 
         return parameters
 
@@ -419,9 +421,7 @@ class AbletonOSCGateway(AbletonGateway):
             [track_id, device_id, parameter_id, value],
         )
 
-    async def bypass_device(
-        self, track_id: int, device_id: int, bypass: bool
-    ) -> None:
+    async def bypass_device(self, track_id: int, device_id: int, bypass: bool) -> None:
         """Bypass or enable a device (fire-and-forget, no confirmation)."""
         self._send(
             "/live/device/set/enabled",

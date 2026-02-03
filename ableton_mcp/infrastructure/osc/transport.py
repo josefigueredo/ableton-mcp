@@ -1,12 +1,13 @@
 """Async UDP transport for OSC communication using asyncio.DatagramProtocol."""
 
 import asyncio
-from typing import Any, Callable, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 import structlog
+from pythonosc.osc_bundle import OscBundle
 from pythonosc.osc_message import OscMessage
 from pythonosc.osc_message_builder import OscMessageBuilder
-from pythonosc.osc_bundle import OscBundle
 
 logger = structlog.get_logger(__name__)
 
@@ -19,7 +20,7 @@ class OSCProtocol(asyncio.DatagramProtocol):
 
     def __init__(
         self,
-        message_handler: Callable[[str, List[Any]], None],
+        message_handler: Callable[[str, list[Any]], None],
     ) -> None:
         """Initialize the protocol.
 
@@ -27,7 +28,7 @@ class OSCProtocol(asyncio.DatagramProtocol):
             message_handler: Callback for received OSC messages (address, args)
         """
         self._message_handler = message_handler
-        self._transport: Optional[asyncio.DatagramTransport] = None
+        self._transport: asyncio.DatagramTransport | None = None
         self._parse_error_count: int = 0
 
     def connection_made(self, transport: asyncio.DatagramTransport) -> None:  # type: ignore[override]
@@ -35,7 +36,7 @@ class OSCProtocol(asyncio.DatagramProtocol):
         self._transport = transport
         logger.debug("OSC receiver connection established")
 
-    def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         """Called when a datagram is received."""
         try:
             self._parse_and_dispatch(data)
@@ -80,7 +81,7 @@ class OSCProtocol(asyncio.DatagramProtocol):
         """Called when an error is received."""
         logger.error("OSC protocol error", error=str(exc))
 
-    def connection_lost(self, exc: Optional[Exception]) -> None:
+    def connection_lost(self, exc: Exception | None) -> None:
         """Called when connection is lost."""
         if exc:
             logger.warning("OSC connection lost", error=str(exc))
@@ -92,9 +93,9 @@ class AsyncOSCTransport:
     """Async OSC transport managing send and receive endpoints."""
 
     def __init__(self) -> None:
-        self._send_transport: Optional[asyncio.DatagramTransport] = None
-        self._receive_transport: Optional[asyncio.DatagramTransport] = None
-        self._protocol: Optional[OSCProtocol] = None
+        self._send_transport: asyncio.DatagramTransport | None = None
+        self._receive_transport: asyncio.DatagramTransport | None = None
+        self._protocol: OSCProtocol | None = None
         self._host: str = "127.0.0.1"
         self._send_port: int = 11000
         self._receive_port: int = 11001
@@ -105,7 +106,7 @@ class AsyncOSCTransport:
         host: str,
         send_port: int,
         receive_port: int,
-        message_handler: Callable[[str, List[Any]], None],
+        message_handler: Callable[[str, list[Any]], None],
     ) -> None:
         """Establish OSC connection.
 
@@ -164,7 +165,7 @@ class AsyncOSCTransport:
         """Check if transport is connected."""
         return self._connected
 
-    def send(self, address: str, args: List[Any]) -> None:
+    def send(self, address: str, args: list[Any]) -> None:
         """Send an OSC message.
 
         Args:

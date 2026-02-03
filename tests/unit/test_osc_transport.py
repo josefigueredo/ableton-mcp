@@ -1,7 +1,7 @@
 """Unit tests for OSC transport layer."""
 
 import asyncio
-from unittest.mock import AsyncMock, Mock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 

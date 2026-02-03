@@ -1,0 +1,48 @@
+# Development Dockerfile for Ableton Live MCP Server
+#
+# This Dockerfile sets up a development environment with all
+# necessary tools for testing, linting, and development.
+
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency files first (for better caching)
+COPY pyproject.toml ./
+COPY README.md ./
+
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+    pip install -e ".[dev]"
+
+# Copy the rest of the application
+COPY . .
+
+# Install pre-commit hooks
+RUN git init && pre-commit install || true
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash developer && \
+    chown -R developer:developer /app
+
+USER developer
+
+# Expose OSC ports
+EXPOSE 11000/udp
+EXPOSE 11001/udp
+
+# Default command - run tests
+CMD ["pytest", "--cov=ableton_mcp", "-v"]

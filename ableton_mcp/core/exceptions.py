@@ -1,6 +1,6 @@
 """Core exceptions for the Ableton MCP system."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class AbletonMCPError(Exception):
@@ -9,8 +9,8 @@ class AbletonMCPError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        error_code: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         self.message = message

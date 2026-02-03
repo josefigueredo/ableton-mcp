@@ -1,7 +1,7 @@
 """Domain services containing business logic that doesn't belong to entities."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from ableton_mcp.domain.entities import (
     AnalysisResult,
@@ -17,35 +17,27 @@ class MusicTheoryService(ABC):
     """Service for music theory analysis and suggestions."""
 
     @abstractmethod
-    async def analyze_key(self, notes: List[Note]) -> List[MusicKey]:
+    async def analyze_key(self, notes: list[Note]) -> list[MusicKey]:
         """Analyze the musical key of given notes."""
         pass
 
     @abstractmethod
-    async def suggest_chord_progressions(
-        self, key: MusicKey, genre: str
-    ) -> List[List[int]]:
+    async def suggest_chord_progressions(self, key: MusicKey, genre: str) -> list[list[int]]:
         """Suggest chord progressions for a given key and genre."""
         pass
 
     @abstractmethod
-    async def harmonize_melody(
-        self, melody_notes: List[Note], key: MusicKey
-    ) -> List[Note]:
+    async def harmonize_melody(self, melody_notes: list[Note], key: MusicKey) -> list[Note]:
         """Generate harmony notes for a melody."""
         pass
 
     @abstractmethod
-    async def quantize_notes(
-        self, notes: List[Note], grid_division: float = 0.25
-    ) -> List[Note]:
+    async def quantize_notes(self, notes: list[Note], grid_division: float = 0.25) -> list[Note]:
         """Quantize notes to a rhythmic grid."""
         pass
 
     @abstractmethod
-    async def filter_notes_to_scale(
-        self, notes: List[Note], key: MusicKey
-    ) -> List[Note]:
+    async def filter_notes_to_scale(self, notes: list[Note], key: MusicKey) -> list[Note]:
         """Filter notes to fit within a musical scale."""
         pass
 
@@ -59,21 +51,17 @@ class ArrangementService(ABC):
         pass
 
     @abstractmethod
-    async def suggest_arrangement_improvements(
-        self, song: Song, genre: str
-    ) -> List[str]:
+    async def suggest_arrangement_improvements(self, song: Song, genre: str) -> list[str]:
         """Suggest improvements to song arrangement."""
         pass
 
     @abstractmethod
-    async def calculate_energy_curve(self, song: Song) -> List[Tuple[float, float]]:
+    async def calculate_energy_curve(self, song: Song) -> list[tuple[float, float]]:
         """Calculate energy levels throughout the song."""
         pass
 
     @abstractmethod
-    async def suggest_section_lengths(
-        self, genre: str, song_length: float
-    ) -> Dict[str, float]:
+    async def suggest_section_lengths(self, genre: str, song_length: float) -> dict[str, float]:
         """Suggest optimal section lengths for a genre."""
         pass
 
@@ -82,24 +70,22 @@ class MixingService(ABC):
     """Service for mixing analysis and suggestions."""
 
     @abstractmethod
-    async def analyze_frequency_balance(self, tracks: List[Track]) -> AnalysisResult:
+    async def analyze_frequency_balance(self, tracks: list[Track]) -> AnalysisResult:
         """Analyze frequency balance across tracks."""
         pass
 
     @abstractmethod
-    async def suggest_eq_adjustments(self, track: Track) -> List[Dict[str, Any]]:
+    async def suggest_eq_adjustments(self, track: Track) -> list[dict[str, Any]]:
         """Suggest EQ adjustments for a track."""
         pass
 
     @abstractmethod
-    async def analyze_stereo_image(self, tracks: List[Track]) -> AnalysisResult:
+    async def analyze_stereo_image(self, tracks: list[Track]) -> AnalysisResult:
         """Analyze stereo imaging and panning."""
         pass
 
     @abstractmethod
-    async def calculate_lufs_target(
-        self, genre: str, platform: str
-    ) -> Tuple[float, float]:
+    async def calculate_lufs_target(self, genre: str, platform: str) -> tuple[float, float]:
         """Calculate target LUFS and peak levels for genre/platform."""
         pass
 
@@ -124,8 +110,8 @@ class TempoAnalysisService(ABC):
 
     @abstractmethod
     async def suggest_tempo_changes(
-        self, song: Song, target_energy: List[float]
-    ) -> List[Tuple[float, float]]:
+        self, song: Song, target_energy: list[float]
+    ) -> list[tuple[float, float]]:
         """Suggest tempo changes to match target energy curve."""
         pass
 
@@ -151,44 +137,44 @@ class ValidationService:
         return clip.loop_start < clip.length
 
     @staticmethod
-    def validate_track_configuration(track: Track) -> List[str]:
+    def validate_track_configuration(track: Track) -> list[str]:
         """Validate track configuration and return any issues."""
         issues = []
-        
+
         if not track.name.strip():
             issues.append("Track name cannot be empty")
-        
+
         if not 0.0 <= track.volume <= 1.0:
             issues.append("Track volume must be between 0.0 and 1.0")
-        
+
         if not -1.0 <= track.pan <= 1.0:
             issues.append("Track pan must be between -1.0 and 1.0")
-        
+
         # Validate clips
         for i, clip in enumerate(track.clips):
             if clip and not ValidationService.validate_clip_timing(clip):
                 issues.append(f"Invalid timing in clip at slot {i}")
-        
+
         return issues
 
     @staticmethod
-    def validate_song_structure(song: Song) -> List[str]:
+    def validate_song_structure(song: Song) -> list[str]:
         """Validate overall song structure."""
         issues = []
-        
+
         if not ValidationService.validate_tempo(song.tempo):
             issues.append("Invalid tempo range")
-        
+
         if song.loop_start >= song.loop_end:
             issues.append("Loop start must be before loop end")
-        
+
         if not song.tracks:
             issues.append("Song must have at least one track")
-        
+
         # Validate all tracks
         for i, track in enumerate(song.tracks):
             track_issues = ValidationService.validate_track_configuration(track)
             for issue in track_issues:
                 issues.append(f"Track {i}: {issue}")
-        
+
         return issues

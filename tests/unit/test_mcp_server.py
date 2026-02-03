@@ -1,6 +1,6 @@
 """Unit tests for MCP server implementation."""
 
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -52,9 +52,7 @@ class TestAbletonMCPServerInit:
         assert mcp_server.server is not None
         assert mcp_server.server.name == "ableton-live-mcp"
 
-    def test_use_cases_are_stored(
-        self, mcp_server: AbletonMCPServer, mock_use_cases: dict
-    ) -> None:
+    def test_use_cases_are_stored(self, mcp_server: AbletonMCPServer, mock_use_cases: dict) -> None:
         """Test that use cases are properly stored."""
         assert mcp_server._connect_use_case == mock_use_cases["connect_use_case"]
         assert mcp_server._transport_use_case == mock_use_cases["transport_use_case"]
@@ -182,8 +180,22 @@ class TestFormatData:
             "clip_id": 0,
             "note_count": 2,
             "notes": [
-                {"pitch": 60, "note_name": "C4", "start": 0.0, "duration": 1.0, "velocity": 100, "mute": False},
-                {"pitch": 64, "note_name": "E4", "start": 1.0, "duration": 0.5, "velocity": 80, "mute": True},
+                {
+                    "pitch": 60,
+                    "note_name": "C4",
+                    "start": 0.0,
+                    "duration": 1.0,
+                    "velocity": 100,
+                    "mute": False,
+                },
+                {
+                    "pitch": 64,
+                    "note_name": "E4",
+                    "start": 1.0,
+                    "duration": 0.5,
+                    "velocity": 80,
+                    "mute": True,
+                },
             ],
         }
         formatted = await mcp_server._format_data(data)

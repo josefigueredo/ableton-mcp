@@ -2,8 +2,6 @@
 
 from unittest.mock import AsyncMock, Mock
 
-import pytest
-
 from ableton_mcp.adapters.service_adapters import (
     AbletonClipService,
     AbletonConnectionService,

@@ -6,13 +6,14 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, validator
 
 
 class TransportState(str, Enum):
     """Transport playback states."""
+
     STOPPED = "stopped"
     PLAYING = "playing"
     RECORDING = "recording"
@@ -21,6 +22,7 @@ class TransportState(str, Enum):
 
 class TrackType(str, Enum):
     """Types of tracks in Ableton Live."""
+
     MIDI = "midi"
     AUDIO = "audio"
     RETURN = "return"
@@ -30,6 +32,7 @@ class TrackType(str, Enum):
 
 class DeviceType(str, Enum):
     """Types of devices/plugins."""
+
     INSTRUMENT = "instrument"
     AUDIO_EFFECT = "audio_effect"
     MIDI_EFFECT = "midi_effect"
@@ -37,6 +40,7 @@ class DeviceType(str, Enum):
 
 class ClipType(str, Enum):
     """Types of clips."""
+
     MIDI = "midi"
     AUDIO = "audio"
 
@@ -44,6 +48,7 @@ class ClipType(str, Enum):
 @dataclass(frozen=True)
 class EntityId:
     """Value object for entity identification."""
+
     value: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def __str__(self) -> str:
@@ -52,6 +57,7 @@ class EntityId:
 
 class Note(BaseModel):
     """MIDI note representation with music theory awareness."""
+
     pitch: int = Field(ge=0, le=127, description="MIDI note number")
     start: float = Field(ge=0, description="Start time in beats")
     duration: float = Field(gt=0, description="Duration in beats")
@@ -83,6 +89,7 @@ class Note(BaseModel):
 
 class Parameter(BaseModel):
     """Device parameter representation."""
+
     id: int = Field(description="Parameter ID")
     name: str = Field(description="Parameter name")
     value: float = Field(description="Current parameter value")
@@ -90,10 +97,10 @@ class Parameter(BaseModel):
     max_value: float = Field(default=1.0, description="Maximum value")
     default_value: float = Field(default=0.5, description="Default value")
     is_enabled: bool = Field(default=True, description="Whether parameter is enabled")
-    unit: Optional[str] = Field(default=None, description="Parameter unit")
+    unit: str | None = Field(default=None, description="Parameter unit")
 
     @validator("value")
-    def validate_value_range(cls, v: float, values: Dict[str, Any]) -> float:
+    def validate_value_range(cls, v: float, values: dict[str, Any]) -> float:
         min_val = float(values.get("min_value", 0.0))
         max_val = float(values.get("max_value", 1.0))
         return float(max(min_val, min(max_val, v)))
@@ -101,15 +108,16 @@ class Parameter(BaseModel):
 
 class Device(BaseModel):
     """Audio/MIDI device or plugin."""
+
     id: EntityId = Field(default_factory=EntityId)
     name: str = Field(description="Device name")
     device_type: DeviceType = Field(description="Type of device")
     is_enabled: bool = Field(default=True, description="Whether device is enabled")
-    parameters: List[Parameter] = Field(default_factory=list)
-    preset_name: Optional[str] = Field(default=None)
+    parameters: list[Parameter] = Field(default_factory=list)
+    preset_name: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    def get_parameter(self, name: str) -> Optional[Parameter]:
+    def get_parameter(self, name: str) -> Parameter | None:
         """Get parameter by name."""
         return next((p for p in self.parameters if p.name == name), None)
 
@@ -122,20 +130,21 @@ class Device(BaseModel):
 
 class Clip(BaseModel):
     """Audio or MIDI clip."""
+
     id: EntityId = Field(default_factory=EntityId)
-    name: Optional[str] = Field(default=None)
+    name: str | None = Field(default=None)
     clip_type: ClipType = Field(description="Type of clip")
     length: float = Field(gt=0, description="Clip length in beats")
     loop_start: float = Field(default=0.0, ge=0)
-    loop_end: Optional[float] = Field(default=None, ge=0)
+    loop_end: float | None = Field(default=None, ge=0)
     is_looping: bool = Field(default=True)
     is_playing: bool = Field(default=False)
-    notes: List[Note] = Field(default_factory=list)  # For MIDI clips
-    file_path: Optional[str] = Field(default=None)  # For audio clips
+    notes: list[Note] = Field(default_factory=list)  # For MIDI clips
+    file_path: str | None = Field(default=None)  # For audio clips
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     @validator("loop_end")
-    def validate_loop_end(cls, v: Optional[float], values: Dict[str, Any]) -> Optional[float]:
+    def validate_loop_end(cls, v: float | None, values: dict[str, Any]) -> float | None:
         if v is not None and "length" in values:
             return float(min(v, float(values["length"])))
         return v
@@ -152,6 +161,7 @@ class Clip(BaseModel):
 
 class Track(BaseModel):
     """Audio or MIDI track."""
+
     id: EntityId = Field(default_factory=EntityId)
     name: str = Field(description="Track name")
     track_type: TrackType = Field(description="Type of track")
@@ -160,27 +170,27 @@ class Track(BaseModel):
     is_muted: bool = Field(default=False)
     is_soloed: bool = Field(default=False)
     is_armed: bool = Field(default=False)
-    color: Optional[int] = Field(default=None, description="Track color index")
-    devices: List[Device] = Field(default_factory=list)
-    clips: List[Optional[Clip]] = Field(default_factory=list)
+    color: int | None = Field(default=None, description="Track color index")
+    devices: list[Device] = Field(default_factory=list)
+    clips: list[Clip | None] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     def add_device(self, device: Device) -> None:
         """Add a device to the track."""
         self.devices.append(device)
 
-    def get_device_by_name(self, name: str) -> Optional[Device]:
+    def get_device_by_name(self, name: str) -> Device | None:
         """Get device by name."""
         return next((d for d in self.devices if d.name == name), None)
 
-    def set_clip(self, slot_index: int, clip: Optional[Clip]) -> None:
+    def set_clip(self, slot_index: int, clip: Clip | None) -> None:
         """Set clip at specific slot."""
         # Extend clips list if necessary
         while len(self.clips) <= slot_index:
             self.clips.append(None)
         self.clips[slot_index] = clip
 
-    def get_clip(self, slot_index: int) -> Optional[Clip]:
+    def get_clip(self, slot_index: int) -> Clip | None:
         """Get clip at specific slot."""
         if 0 <= slot_index < len(self.clips):
             return self.clips[slot_index]
@@ -189,18 +199,19 @@ class Track(BaseModel):
 
 class Song(BaseModel):
     """Ableton Live song/project."""
+
     id: EntityId = Field(default_factory=EntityId)
     name: str = Field(default="Untitled")
     tempo: float = Field(default=120.0, gt=0, le=999)
     time_signature_numerator: int = Field(default=4, ge=1, le=32)
     time_signature_denominator: int = Field(default=4, ge=1, le=32)
-    key: Optional[str] = Field(default=None, description="Song key signature")
+    key: str | None = Field(default=None, description="Song key signature")
     current_song_time: float = Field(default=0.0, ge=0)
     loop_start: float = Field(default=0.0, ge=0)
     loop_end: float = Field(default=4.0, gt=0)
     is_loop_on: bool = Field(default=False)
     transport_state: TransportState = Field(default=TransportState.STOPPED)
-    tracks: List[Track] = Field(default_factory=list)
+    tracks: list[Track] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_modified: datetime = Field(default_factory=datetime.utcnow)
 
@@ -215,33 +226,34 @@ class Song(BaseModel):
         self.tracks.append(track)
         self.last_modified = datetime.utcnow()
 
-    def get_track_by_id(self, track_id: EntityId) -> Optional[Track]:
+    def get_track_by_id(self, track_id: EntityId) -> Track | None:
         """Get track by ID."""
         return next((t for t in self.tracks if t.id == track_id), None)
 
-    def get_track_by_index(self, index: int) -> Optional[Track]:
+    def get_track_by_index(self, index: int) -> Track | None:
         """Get track by index."""
         if 0 <= index < len(self.tracks):
             return self.tracks[index]
         return None
 
-    def get_track_by_name(self, name: str) -> Optional[Track]:
+    def get_track_by_name(self, name: str) -> Track | None:
         """Get track by name."""
         return next((t for t in self.tracks if t.name == name), None)
 
     @property
-    def midi_tracks(self) -> List[Track]:
+    def midi_tracks(self) -> list[Track]:
         """Get all MIDI tracks."""
         return [t for t in self.tracks if t.track_type == TrackType.MIDI]
 
     @property
-    def audio_tracks(self) -> List[Track]:
+    def audio_tracks(self) -> list[Track]:
         """Get all audio tracks."""
         return [t for t in self.tracks if t.track_type == TrackType.AUDIO]
 
 
 class MusicKey(BaseModel):
     """Musical key representation with theory awareness."""
+
     root: int = Field(ge=0, le=11, description="Root note (0=C, 1=C#, etc.)")
     mode: str = Field(description="Mode (major, minor, dorian, etc.)")
     confidence: float = Field(ge=0.0, le=1.0, default=1.0)
@@ -253,7 +265,7 @@ class MusicKey(BaseModel):
         return note_names[self.root]
 
     @property
-    def scale_notes(self) -> List[int]:
+    def scale_notes(self) -> list[int]:
         """Get the scale notes for this key."""
         # This would be expanded with full scale definitions
         scales = {
@@ -268,11 +280,12 @@ class MusicKey(BaseModel):
 
 class AnalysisResult(BaseModel):
     """Result of music analysis."""
+
     id: EntityId = Field(default_factory=EntityId)
     analysis_type: str = Field(description="Type of analysis performed")
     confidence: float = Field(ge=0.0, le=1.0)
-    data: Dict[str, Any] = Field(description="Analysis data")
+    data: dict[str, Any] = Field(description="Analysis data")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    
+
     class Config:
         arbitrary_types_allowed = True

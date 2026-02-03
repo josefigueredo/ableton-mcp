@@ -1,9 +1,6 @@
 """Unit tests for main application entry point."""
 
-import sys
 from unittest.mock import AsyncMock, Mock, patch
-
-import pytest
 
 from ableton_mcp.main import cli, display_banner, main
 
@@ -108,9 +105,7 @@ class TestMain:
 
         mock_container = Mock()
         mock_mcp_server = Mock()
-        mock_mcp_server.run = AsyncMock(
-            side_effect=AbletonMCPError("Test error", "TEST_CODE")
-        )
+        mock_mcp_server.run = AsyncMock(side_effect=AbletonMCPError("Test error", "TEST_CODE"))
         mock_container.mcp_server.return_value = mock_mcp_server
         mock_container_class.return_value = mock_container
 

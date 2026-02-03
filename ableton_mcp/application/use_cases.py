@@ -2,22 +2,17 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import structlog
 
 from ableton_mcp.core.exceptions import (
     ClipNotFoundError,
-    DeviceNotFoundError,
     InvalidParameterError,
     TrackNotFoundError,
     ValidationError,
 )
 from ableton_mcp.domain.entities import (
-    AnalysisResult,
-    Clip,
-    ClipType,
-    Device,
     EntityId,
     Note,
     Song,
@@ -27,7 +22,6 @@ from ableton_mcp.domain.entities import (
 )
 from ableton_mcp.domain.repositories import (
     ClipRepository,
-    DeviceRepository,
     SongRepository,
     TrackRepository,
 )
@@ -45,9 +39,9 @@ class UseCaseResult:
     """Result wrapper for use case operations."""
 
     success: bool
-    data: Optional[Any] = None
-    message: Optional[str] = None
-    error_code: Optional[str] = None
+    data: Any | None = None
+    message: str | None = None
+    error_code: str | None = None
 
 
 class UseCase(ABC):
@@ -98,7 +92,7 @@ class ConnectToAbletonUseCase(UseCase):
         except Exception as e:
             return UseCaseResult(
                 success=False,
-                message=f"Failed to connect: {str(e)}",
+                message=f"Failed to connect: {e!s}",
                 error_code="CONNECTION_FAILED",
             )
 
@@ -112,7 +106,7 @@ class ConnectToAbletonUseCase(UseCase):
         num_tracks = await self._gateway.get_num_tracks()
 
         # Build track list
-        tracks: List[Track] = []
+        tracks: list[Track] = []
         for i in range(num_tracks):
             try:
                 track_name = await self._gateway.get_track_name(i)
@@ -173,9 +167,7 @@ class RefreshSongDataUseCase(UseCase):
         self._gateway = ableton_gateway
         self._logger = structlog.get_logger(__name__)
 
-    async def execute(
-        self, request: Optional[RefreshSongDataRequest] = None
-    ) -> UseCaseResult:
+    async def execute(self, _request: RefreshSongDataRequest | None = None) -> UseCaseResult:
         """Refresh song data from Ableton Live."""
         try:
             self._logger.info("Refreshing song data from Ableton")
@@ -189,7 +181,7 @@ class RefreshSongDataUseCase(UseCase):
             self._logger.error("Failed to refresh song data", error=str(e))
             return UseCaseResult(
                 success=False,
-                message=f"Failed to refresh song data: {str(e)}",
+                message=f"Failed to refresh song data: {e!s}",
                 error_code="REFRESH_FAILED",
             )
 
@@ -203,7 +195,7 @@ class RefreshSongDataUseCase(UseCase):
         num_tracks = await self._gateway.get_num_tracks()
 
         # Build track list
-        tracks: List[Track] = []
+        tracks: list[Track] = []
         for i in range(num_tracks):
             try:
                 track_name = await self._gateway.get_track_name(i)
@@ -250,7 +242,7 @@ class TransportControlRequest:
     """Request for transport control operations."""
 
     action: str  # play, stop, record, get_status
-    value: Optional[float] = None
+    value: float | None = None
 
 
 class TransportControlUseCase(UseCase):
@@ -298,7 +290,7 @@ class TransportControlUseCase(UseCase):
         except Exception as e:
             return UseCaseResult(
                 success=False,
-                message=f"Transport control error: {str(e)}",
+                message=f"Transport control error: {e!s}",
                 error_code="TRANSPORT_ERROR",
             )
 
@@ -376,7 +368,7 @@ class GetSongInfoUseCase(UseCase):
         except Exception as e:
             return UseCaseResult(
                 success=False,
-                message=f"Error getting song info: {str(e)}",
+                message=f"Error getting song info: {e!s}",
                 error_code="SONG_INFO_ERROR",
             )
 
@@ -386,10 +378,10 @@ class TrackOperationRequest:
     """Request for track operations."""
 
     action: str  # get_info, set_volume, set_pan, mute, solo, arm, create, delete
-    track_id: Optional[int] = None
-    value: Optional[float] = None
-    name: Optional[str] = None
-    track_type: Optional[str] = None
+    track_id: int | None = None
+    value: float | None = None
+    name: str | None = None
+    track_type: str | None = None
 
 
 class TrackOperationsUseCase(UseCase):
@@ -506,7 +498,7 @@ class TrackOperationsUseCase(UseCase):
         except Exception as e:
             return UseCaseResult(
                 success=False,
-                message=f"Track operation error: {str(e)}",
+                message=f"Track operation error: {e!s}",
                 error_code="TRACK_ERROR",
             )
 
@@ -517,9 +509,9 @@ class AddNotesRequest:
 
     track_id: int
     clip_id: int
-    notes: List[Dict[str, Any]]
+    notes: list[dict[str, Any]]
     quantize: bool = False
-    scale_filter: Optional[str] = None
+    scale_filter: str | None = None
 
 
 class AddNotesUseCase(UseCase):
@@ -564,7 +556,7 @@ class AddNotesUseCase(UseCase):
                     )
                     notes.append(note)
                 except Exception as e:
-                    raise InvalidParameterError(f"Invalid note data: {str(e)}")
+                    raise InvalidParameterError(f"Invalid note data: {e!s}") from e
 
             # Apply music theory processing
             if request.scale_filter:
@@ -598,7 +590,7 @@ class AddNotesUseCase(UseCase):
         except Exception as e:
             return UseCaseResult(
                 success=False,
-                message=f"Error adding notes: {str(e)}",
+                message=f"Error adding notes: {e!s}",
                 error_code="ADD_NOTES_ERROR",
             )
 
@@ -607,7 +599,7 @@ class AddNotesUseCase(UseCase):
 class AnalyzeHarmonyRequest:
     """Request for harmony analysis."""
 
-    notes: List[int]
+    notes: list[int]
     suggest_progressions: bool = False
     genre: str = "pop"
 
@@ -634,7 +626,7 @@ class AnalyzeHarmonyUseCase(UseCase):
             # Analyze key
             keys = await self._music_theory_service.analyze_key(notes)
 
-            result_data: Dict[str, Any] = {
+            result_data: dict[str, Any] = {
                 "input_notes": request.notes,
                 "detected_keys": [],
                 "chord_progressions": [],
@@ -664,7 +656,7 @@ class AnalyzeHarmonyUseCase(UseCase):
         except Exception as e:
             return UseCaseResult(
                 success=False,
-                message=f"Harmony analysis error: {str(e)}",
+                message=f"Harmony analysis error: {e!s}",
                 error_code="HARMONY_ANALYSIS_ERROR",
             )
 
@@ -673,8 +665,8 @@ class AnalyzeHarmonyUseCase(UseCase):
 class AnalyzeTempoRequest:
     """Request for tempo analysis."""
 
-    current_bpm: Optional[float] = None
-    genre: Optional[str] = None
+    current_bpm: float | None = None
+    genre: str | None = None
     energy_level: str = "medium"
 
 
@@ -695,12 +687,9 @@ class AnalyzeTempoUseCase(UseCase):
             current_bpm = request.current_bpm
             if current_bpm is None:
                 song = await self._song_repository.get_current_song()
-                if song:
-                    current_bpm = song.tempo
-                else:
-                    current_bpm = 120.0
+                current_bpm = song.tempo if song else 120.0
 
-            result_data: Dict[str, Any] = {
+            result_data: dict[str, Any] = {
                 "current_tempo": current_bpm,
                 "analysis": {
                     "energy_level": request.energy_level,
@@ -728,7 +717,7 @@ class AnalyzeTempoUseCase(UseCase):
         except Exception as e:
             return UseCaseResult(
                 success=False,
-                message=f"Tempo analysis error: {str(e)}",
+                message=f"Tempo analysis error: {e!s}",
                 error_code="TEMPO_ANALYSIS_ERROR",
             )
 
@@ -761,7 +750,7 @@ class MixAnalysisUseCase(UseCase):
             if not song:
                 return UseCaseResult(success=False, message="No active song")
 
-            result_data: Dict[str, Any] = {
+            result_data: dict[str, Any] = {
                 "track_count": len(song.tracks),
                 "platform": request.platform,
                 "target_lufs": request.target_lufs,
@@ -826,7 +815,7 @@ class MixAnalysisUseCase(UseCase):
         except Exception as e:
             return UseCaseResult(
                 success=False,
-                message=f"Mix analysis error: {str(e)}",
+                message=f"Mix analysis error: {e!s}",
                 error_code="MIX_ANALYSIS_ERROR",
             )
 
@@ -835,9 +824,9 @@ class MixAnalysisUseCase(UseCase):
 class ArrangementSuggestionsRequest:
     """Request for arrangement suggestions."""
 
-    song_length: Optional[float] = None
-    genre: Optional[str] = None
-    current_structure: Optional[List[str]] = None
+    song_length: float | None = None
+    genre: str | None = None
+    current_structure: list[str] | None = None
 
 
 @dataclass
@@ -935,7 +924,7 @@ class GetClipContentUseCase(UseCase):
             )
             return UseCaseResult(
                 success=False,
-                message=f"Error getting clip content: {str(e)}",
+                message=f"Error getting clip content: {e!s}",
                 error_code="CLIP_CONTENT_ERROR",
             )
 
@@ -959,7 +948,7 @@ class ArrangementSuggestionsUseCase(UseCase):
                 return UseCaseResult(success=False, message="No active song")
 
             genre = request.genre or "pop"
-            result_data: Dict[str, Any] = {
+            result_data: dict[str, Any] = {
                 "genre": genre,
                 "tempo": song.tempo,
                 "track_count": len(song.tracks),
@@ -993,6 +982,6 @@ class ArrangementSuggestionsUseCase(UseCase):
         except Exception as e:
             return UseCaseResult(
                 success=False,
-                message=f"Arrangement analysis error: {str(e)}",
+                message=f"Arrangement analysis error: {e!s}",
                 error_code="ARRANGEMENT_ANALYSIS_ERROR",
             )
