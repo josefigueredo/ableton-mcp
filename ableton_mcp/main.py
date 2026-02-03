@@ -1,46 +1,13 @@
 """Main application entry point for Ableton Live MCP Server."""
 
 import asyncio
-import logging
 import sys
-from pathlib import Path
 
-import structlog
 from rich.console import Console
-from rich.logging import RichHandler
 
 from ableton_mcp.container import Container
 from ableton_mcp.core.exceptions import AbletonMCPError
-
-
-def setup_logging() -> None:
-    """Configure structured logging with rich formatting."""
-    # Configure standard library logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-        datefmt="[%X]",
-        handlers=[RichHandler(rich_tracebacks=True)]
-    )
-
-    # Configure structlog
-    structlog.configure(
-        processors=[
-            structlog.stdlib.filter_by_level,
-            structlog.stdlib.add_logger_name,
-            structlog.stdlib.add_log_level,
-            structlog.stdlib.PositionalArgumentsFormatter(),
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.processors.StackInfoRenderer(),
-            structlog.processors.format_exc_info,
-            structlog.processors.UnicodeDecoder(),
-            structlog.processors.JSONRenderer()
-        ],
-        context_class=dict,
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        wrapper_class=structlog.stdlib.BoundLogger,
-        cache_logger_on_first_use=True,
-    )
+from ableton_mcp.core.logging import get_logger, setup_logging
 
 
 def display_banner() -> None:
@@ -76,9 +43,9 @@ def display_banner() -> None:
 async def main() -> None:
     """Main application entry point."""
     try:
-        # Setup logging
+        # Setup logging (JSON output to file by default)
         setup_logging()
-        logger = structlog.get_logger(__name__)
+        logger = get_logger(__name__)
         
         # Display banner
         display_banner()

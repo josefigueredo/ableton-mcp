@@ -29,3 +29,5 @@ logs/
 OldCode
 .mypy_cache/
 .pytest_cache/
+.coverage
+htmlcov/

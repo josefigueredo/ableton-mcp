@@ -5,8 +5,7 @@ This module correlates requests with their responses using FIFO queues.
 """
 
 import asyncio
-from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import structlog
@@ -19,13 +18,16 @@ DEFAULT_TIMEOUT_SECONDS = 5.0
 
 @dataclass
 class PendingRequest:
-    """Represents a pending request awaiting a response."""
+    """Represents a pending request awaiting a response.
+
+    Note: future and timestamp should always be provided explicitly.
+    The defaults exist only for dataclass mechanics but will fail
+    if used outside an async context.
+    """
 
     address: str
-    future: asyncio.Future[List[Any]] = field(
-        default_factory=lambda: asyncio.get_event_loop().create_future()
-    )
-    timestamp: float = field(default_factory=lambda: asyncio.get_event_loop().time())
+    future: asyncio.Future[List[Any]]
+    timestamp: float
 
 
 class OSCCorrelator:
@@ -41,9 +43,8 @@ class OSCCorrelator:
         Args:
             default_timeout: Default timeout for waiting on responses
         """
-        self._pending: Dict[str, asyncio.Queue[PendingRequest]] = defaultdict(
-            asyncio.Queue
-        )
+        # Use regular dict instead of defaultdict to avoid creating Queue outside async context
+        self._pending: Dict[str, asyncio.Queue[PendingRequest]] = {}
         self._default_timeout = default_timeout
 
     async def expect_response(
@@ -68,6 +69,10 @@ class OSCCorrelator:
             future=future,
             timestamp=loop.time(),
         )
+
+        # Create queue for this address if it doesn't exist (inside async context)
+        if address not in self._pending:
+            self._pending[address] = asyncio.Queue()
 
         await self._pending[address].put(request)
 
@@ -137,9 +142,35 @@ class OSCCorrelator:
         try:
             return await asyncio.wait_for(future, timeout=effective_timeout)
         except asyncio.TimeoutError:
-            # Clean up the pending request on timeout
+            # Clean up the timed-out request from the queue to prevent memory leak
+            self._cleanup_timed_out_request(address, future)
             logger.warning("Request timed out", address=address, timeout=effective_timeout)
             raise
+
+    def _cleanup_timed_out_request(
+        self, address: str, future: asyncio.Future[List[Any]]
+    ) -> None:
+        """Remove a timed-out request from the queue.
+
+        This prevents memory leaks from accumulating timed-out futures.
+        """
+        queue = self._pending.get(address)
+        if queue is None:
+            return
+
+        # Drain and rebuild the queue without the timed-out future
+        remaining: List[PendingRequest] = []
+        while not queue.empty():
+            try:
+                request = queue.get_nowait()
+                if request.future is not future:
+                    remaining.append(request)
+            except asyncio.QueueEmpty:
+                break
+
+        # Re-add non-timed-out requests
+        for request in remaining:
+            queue.put_nowait(request)
 
     def cancel_all(self) -> None:
         """Cancel all pending requests.

@@ -14,6 +14,9 @@ logger = structlog.get_logger(__name__)
 class OSCProtocol(asyncio.DatagramProtocol):
     """Asyncio datagram protocol for receiving OSC messages."""
 
+    # Threshold for warning about parse errors
+    PARSE_ERROR_WARN_THRESHOLD = 10
+
     def __init__(
         self,
         message_handler: Callable[[str, List[Any]], None],
@@ -25,6 +28,7 @@ class OSCProtocol(asyncio.DatagramProtocol):
         """
         self._message_handler = message_handler
         self._transport: Optional[asyncio.DatagramTransport] = None
+        self._parse_error_count: int = 0
 
     def connection_made(self, transport: asyncio.DatagramTransport) -> None:  # type: ignore[override]
         """Called when connection is established."""
@@ -35,8 +39,22 @@ class OSCProtocol(asyncio.DatagramProtocol):
         """Called when a datagram is received."""
         try:
             self._parse_and_dispatch(data)
+            # Reset error count on successful parse
+            self._parse_error_count = 0
         except Exception as e:
-            logger.error("Failed to parse OSC message", error=str(e), addr=addr)
+            self._parse_error_count += 1
+            logger.error(
+                "Failed to parse OSC message",
+                error=str(e),
+                addr=addr,
+                data_length=len(data),
+                error_count=self._parse_error_count,
+            )
+            if self._parse_error_count >= self.PARSE_ERROR_WARN_THRESHOLD:
+                logger.warning(
+                    "High number of consecutive OSC parse errors - connection may be corrupted",
+                    error_count=self._parse_error_count,
+                )
 
     def _parse_and_dispatch(self, data: bytes) -> None:
         """Parse OSC data and dispatch to handler."""

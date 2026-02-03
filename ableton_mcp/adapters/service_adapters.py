@@ -1,6 +1,6 @@
 """Service adapters bridging infrastructure with application layer."""
 
-from typing import Any
+from typing import Any, Dict, List
 
 from ableton_mcp.domain.ports import AbletonGateway
 
@@ -108,7 +108,7 @@ class AbletonClipService:
             start=note.start,
             duration=note.duration,
             velocity=note.velocity,
-            mute=note.mute
+            mute=note.mute,
         )
 
     async def create_clip(self, track_id: int, clip_id: int, length: float) -> None:
@@ -118,3 +118,15 @@ class AbletonClipService:
     async def delete_clip(self, track_id: int, clip_id: int) -> None:
         """Delete a clip."""
         await self._gateway.delete_clip(track_id, clip_id)
+
+    async def get_clip_notes(self, track_id: int, clip_id: int) -> List[Dict[str, Any]]:
+        """Get all MIDI notes from a clip.
+
+        Args:
+            track_id: Track index (0-based)
+            clip_id: Clip slot index (0-based)
+
+        Returns:
+            List of note dicts with keys: pitch, start, duration, velocity, mute
+        """
+        return await self._gateway.get_clip_notes(track_id, clip_id)

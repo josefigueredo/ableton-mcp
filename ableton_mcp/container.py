@@ -12,8 +12,11 @@ from ableton_mcp.application.use_cases import (
     AddNotesUseCase,
     AnalyzeHarmonyUseCase,
     AnalyzeTempoUseCase,
+    ArrangementSuggestionsUseCase,
     ConnectToAbletonUseCase,
+    GetClipContentUseCase,
     GetSongInfoUseCase,
+    MixAnalysisUseCase,
     TrackOperationsUseCase,
     TransportControlUseCase,
 )
@@ -26,6 +29,8 @@ from ableton_mcp.infrastructure.repositories import (
     InMemoryTrackRepository,
 )
 from ableton_mcp.infrastructure.services import (
+    ArrangementServiceImpl,
+    MixingServiceImpl,
     MusicTheoryServiceImpl,
     TempoAnalysisServiceImpl,
 )
@@ -51,50 +56,39 @@ class Container(containers.DeclarativeContainer):
     # Infrastructure - Domain Services
     music_theory_service = providers.Singleton(MusicTheoryServiceImpl)
     tempo_analysis_service = providers.Singleton(TempoAnalysisServiceImpl)
+    arrangement_service = providers.Singleton(ArrangementServiceImpl)
+    mixing_service = providers.Singleton(MixingServiceImpl)
 
     # Adapters - Service Adapters
-    connection_service = providers.Factory(
-        AbletonConnectionService,
-        gateway=ableton_gateway
-    )
+    connection_service = providers.Factory(AbletonConnectionService, gateway=ableton_gateway)
 
-    transport_service = providers.Factory(
-        AbletonTransportService,
-        gateway=ableton_gateway
-    )
+    transport_service = providers.Factory(AbletonTransportService, gateway=ableton_gateway)
 
-    track_service = providers.Factory(
-        AbletonTrackService,
-        gateway=ableton_gateway
-    )
+    track_service = providers.Factory(AbletonTrackService, gateway=ableton_gateway)
 
-    clip_service = providers.Factory(
-        AbletonClipService,
-        gateway=ableton_gateway
-    )
+    clip_service = providers.Factory(AbletonClipService, gateway=ableton_gateway)
 
     # Application - Use Cases
     connect_use_case = providers.Factory(
         ConnectToAbletonUseCase,
-        connection_service=connection_service
+        connection_service=connection_service,
+        song_repository=song_repository,
+        ableton_gateway=ableton_gateway,
     )
 
     transport_use_case = providers.Factory(
         TransportControlUseCase,
         transport_service=transport_service,
-        song_repository=song_repository
+        song_repository=song_repository,
     )
 
-    song_info_use_case = providers.Factory(
-        GetSongInfoUseCase,
-        song_repository=song_repository
-    )
+    song_info_use_case = providers.Factory(GetSongInfoUseCase, song_repository=song_repository)
 
     track_ops_use_case = providers.Factory(
         TrackOperationsUseCase,
         track_repository=track_repository,
         song_repository=song_repository,
-        track_service=track_service
+        track_service=track_service,
     )
 
     add_notes_use_case = providers.Factory(
@@ -102,18 +96,29 @@ class Container(containers.DeclarativeContainer):
         clip_repository=clip_repository,
         song_repository=song_repository,
         music_theory_service=music_theory_service,
-        clip_service=clip_service
+        clip_service=clip_service,
     )
 
     harmony_analysis_use_case = providers.Factory(
-        AnalyzeHarmonyUseCase,
-        music_theory_service=music_theory_service
+        AnalyzeHarmonyUseCase, music_theory_service=music_theory_service
     )
 
     tempo_analysis_use_case = providers.Factory(
-        AnalyzeTempoUseCase,
-        tempo_service=tempo_analysis_service,
-        song_repository=song_repository
+        AnalyzeTempoUseCase, tempo_service=tempo_analysis_service, song_repository=song_repository
+    )
+
+    mix_analysis_use_case = providers.Factory(
+        MixAnalysisUseCase, mixing_service=mixing_service, song_repository=song_repository
+    )
+
+    arrangement_suggestions_use_case = providers.Factory(
+        ArrangementSuggestionsUseCase,
+        arrangement_service=arrangement_service,
+        song_repository=song_repository,
+    )
+
+    clip_content_use_case = providers.Factory(
+        GetClipContentUseCase, clip_service=clip_service, song_repository=song_repository
     )
 
     # Interface - MCP Server
@@ -125,5 +130,8 @@ class Container(containers.DeclarativeContainer):
         track_ops_use_case=track_ops_use_case,
         add_notes_use_case=add_notes_use_case,
         harmony_analysis_use_case=harmony_analysis_use_case,
-        tempo_analysis_use_case=tempo_analysis_use_case
+        tempo_analysis_use_case=tempo_analysis_use_case,
+        mix_analysis_use_case=mix_analysis_use_case,
+        arrangement_suggestions_use_case=arrangement_suggestions_use_case,
+        clip_content_use_case=clip_content_use_case,
     )

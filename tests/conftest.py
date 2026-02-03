@@ -74,8 +74,8 @@ def create_mock_gateway() -> Mock:
     mock.set_track_mute = AsyncMock()
     mock.set_track_solo = AsyncMock()
     mock.set_track_arm = AsyncMock()
-    mock.create_midi_track = AsyncMock(return_value=0)
-    mock.create_audio_track = AsyncMock(return_value=0)
+    mock.create_midi_track = AsyncMock()
+    mock.create_audio_track = AsyncMock()
     mock.delete_track = AsyncMock()
 
     # Clip operations

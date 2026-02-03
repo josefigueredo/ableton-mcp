@@ -4,7 +4,11 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:ccrma.stanford.edu)",
       "WebSearch",
-      "Bash(python -m pytest:*)"
+      "Bash(python -m pytest:*)",
+      "Bash(python:*)",
+      "mcp__ableton-live__get_song_info",
+      "mcp__ableton-live__connect_ableton",
+      "Bash(pytest:*)"
     ],
     "deny": [],
     "ask": []

@@ -67,7 +67,14 @@ class AbletonOSCGateway(AbletonGateway):
                     tempo=tempo,
                 )
             except asyncio.TimeoutError:
-                await self._transport.disconnect()
+                # Ensure cleanup even if disconnect fails
+                try:
+                    await self._transport.disconnect()
+                except Exception as cleanup_error:
+                    logger.error(
+                        "Failed to cleanup after connection timeout",
+                        error=str(cleanup_error),
+                    )
                 raise ConnectionError(
                     "Ableton Live not responding. Is AbletonOSC installed and enabled?"
                 )
@@ -130,22 +137,24 @@ class AbletonOSCGateway(AbletonGateway):
             logger.warning("Request timed out", address=address, timeout=effective_timeout)
             raise
 
-    # Transport control (fire-and-forget)
+    # Transport control (fire-and-forget commands)
+    # These are async for interface consistency but execute synchronously.
+    # No confirmation is received from Ableton - commands are sent immediately.
 
     async def start_playing(self) -> None:
-        """Start playback."""
+        """Start playback (fire-and-forget, no confirmation)."""
         self._send("/live/song/start_playing")
 
     async def stop_playing(self) -> None:
-        """Stop playback."""
+        """Stop playback (fire-and-forget, no confirmation)."""
         self._send("/live/song/stop_playing")
 
     async def start_recording(self) -> None:
-        """Start recording."""
+        """Start recording (fire-and-forget, no confirmation)."""
         self._send("/live/song/start_recording")
 
     async def stop_recording(self) -> None:
-        """Stop recording."""
+        """Stop recording (fire-and-forget, no confirmation)."""
         self._send("/live/song/stop_recording")
 
     # Song queries (request-response)
@@ -153,10 +162,12 @@ class AbletonOSCGateway(AbletonGateway):
     async def get_tempo(self) -> float:
         """Get current song tempo in BPM."""
         response = await self._request("/live/song/get/tempo")
+        if not response:
+            raise OSCCommunicationError("Empty response from Ableton Live for tempo")
         return float(response[0])
 
     async def set_tempo(self, bpm: float) -> None:
-        """Set song tempo."""
+        """Set song tempo (fire-and-forget, no confirmation)."""
         if not 20.0 <= bpm <= 999.0:
             raise OSCCommunicationError("Tempo must be between 20 and 999 BPM")
         self._send("/live/song/set/tempo", [bpm])
@@ -165,21 +176,29 @@ class AbletonOSCGateway(AbletonGateway):
         """Get time signature as (numerator, denominator)."""
         num_response = await self._request("/live/song/get/signature_numerator")
         denom_response = await self._request("/live/song/get/signature_denominator")
+        if not num_response or not denom_response:
+            raise OSCCommunicationError("Empty response from Ableton Live for time signature")
         return int(num_response[0]), int(denom_response[0])
 
     async def get_song_time(self) -> float:
         """Get current song position in beats."""
         response = await self._request("/live/song/get/current_song_time")
+        if not response:
+            raise OSCCommunicationError("Empty response from Ableton Live for song time")
         return float(response[0])
 
     async def get_num_tracks(self) -> int:
         """Get total number of tracks."""
         response = await self._request("/live/song/get/num_tracks")
+        if not response:
+            raise OSCCommunicationError("Empty response from Ableton Live for num_tracks")
         return int(response[0])
 
     async def get_is_playing(self) -> bool:
         """Check if transport is playing."""
         response = await self._request("/live/song/get/is_playing")
+        if not response:
+            raise OSCCommunicationError("Empty response from Ableton Live for is_playing")
         return bool(response[0])
 
     # Track operations
@@ -187,21 +206,25 @@ class AbletonOSCGateway(AbletonGateway):
     async def get_track_name(self, track_id: int) -> str:
         """Get track name."""
         response = await self._request("/live/track/get/name", [track_id])
+        if not response:
+            raise OSCCommunicationError(f"Empty response from Ableton Live for track {track_id} name")
         # Response format: [track_id, name]
         return str(response[1]) if len(response) > 1 else str(response[0])
 
     async def set_track_name(self, track_id: int, name: str) -> None:
-        """Set track name."""
+        """Set track name (fire-and-forget, no confirmation)."""
         self._send("/live/track/set/name", [track_id, name])
 
     async def get_track_volume(self, track_id: int) -> float:
         """Get track volume (0.0-1.0)."""
         response = await self._request("/live/track/get/volume", [track_id])
+        if not response:
+            raise OSCCommunicationError(f"Empty response from Ableton Live for track {track_id} volume")
         # Response format: [track_id, volume]
         return float(response[1]) if len(response) > 1 else float(response[0])
 
     async def set_track_volume(self, track_id: int, volume: float) -> None:
-        """Set track volume (0.0-1.0)."""
+        """Set track volume (0.0-1.0, fire-and-forget, no confirmation)."""
         if not 0.0 <= volume <= 1.0:
             raise OSCCommunicationError("Volume must be between 0.0 and 1.0")
         self._send("/live/track/set/volume", [track_id, volume])
@@ -209,59 +232,88 @@ class AbletonOSCGateway(AbletonGateway):
     async def get_track_pan(self, track_id: int) -> float:
         """Get track pan (-1.0 to 1.0)."""
         response = await self._request("/live/track/get/panning", [track_id])
+        if not response:
+            raise OSCCommunicationError(f"Empty response from Ableton Live for track {track_id} pan")
         # Response format: [track_id, pan]
         return float(response[1]) if len(response) > 1 else float(response[0])
 
     async def set_track_pan(self, track_id: int, pan: float) -> None:
-        """Set track pan (-1.0 to 1.0)."""
+        """Set track pan (-1.0 to 1.0, fire-and-forget, no confirmation)."""
         if not -1.0 <= pan <= 1.0:
             raise OSCCommunicationError("Pan must be between -1.0 and 1.0")
         self._send("/live/track/set/panning", [track_id, pan])
 
+    async def get_track_mute(self, track_id: int) -> bool:
+        """Get track mute state."""
+        response = await self._request("/live/track/get/mute", [track_id])
+        if not response:
+            return False
+        return bool(response[1]) if len(response) > 1 else bool(response[0])
+
     async def set_track_mute(self, track_id: int, mute: bool) -> None:
-        """Set track mute state."""
+        """Set track mute state (fire-and-forget, no confirmation)."""
         self._send("/live/track/set/mute", [track_id, 1 if mute else 0])
 
+    async def get_track_solo(self, track_id: int) -> bool:
+        """Get track solo state."""
+        response = await self._request("/live/track/get/solo", [track_id])
+        if not response:
+            return False
+        return bool(response[1]) if len(response) > 1 else bool(response[0])
+
     async def set_track_solo(self, track_id: int, solo: bool) -> None:
-        """Set track solo state."""
+        """Set track solo state (fire-and-forget, no confirmation)."""
         self._send("/live/track/set/solo", [track_id, 1 if solo else 0])
 
+    async def get_track_arm(self, track_id: int) -> bool:
+        """Get track record arm state."""
+        response = await self._request("/live/track/get/arm", [track_id])
+        if not response:
+            return False
+        return bool(response[1]) if len(response) > 1 else bool(response[0])
+
     async def set_track_arm(self, track_id: int, arm: bool) -> None:
-        """Set track record arm state."""
+        """Set track record arm state (fire-and-forget, no confirmation)."""
         self._send("/live/track/set/arm", [track_id, 1 if arm else 0])
 
-    async def create_midi_track(self, index: int = -1) -> int:
-        """Create a new MIDI track."""
-        response = await self._request("/live/song/create_midi_track", [index])
-        return int(response[0])
+    async def get_track_has_midi_input(self, track_id: int) -> bool:
+        """Check if track has MIDI input capability."""
+        response = await self._request("/live/track/get/has_midi_input", [track_id])
+        if not response:
+            return False
+        # Response format: [track_id, has_midi_input]
+        return bool(response[1]) if len(response) > 1 else bool(response[0])
 
-    async def create_audio_track(self, index: int = -1) -> int:
-        """Create a new audio track."""
-        response = await self._request("/live/song/create_audio_track", [index])
-        return int(response[0])
+    async def create_midi_track(self, index: int = -1) -> None:
+        """Create a new MIDI track (fire-and-forget, no confirmation)."""
+        self._send("/live/song/create_midi_track", [index])
+
+    async def create_audio_track(self, index: int = -1) -> None:
+        """Create a new audio track (fire-and-forget, no confirmation)."""
+        self._send("/live/song/create_audio_track", [index])
 
     async def delete_track(self, track_id: int) -> None:
-        """Delete a track."""
+        """Delete a track (fire-and-forget, no confirmation)."""
         self._send("/live/song/delete_track", [track_id])
 
-    # Clip operations
+    # Clip operations (fire-and-forget commands)
 
     async def fire_clip(self, track_id: int, clip_id: int) -> None:
-        """Fire (launch) a clip."""
+        """Fire (launch) a clip (fire-and-forget, no confirmation)."""
         self._send("/live/clip_slot/fire", [track_id, clip_id])
 
     async def stop_clip(self, track_id: int, clip_id: int) -> None:
-        """Stop a clip."""
+        """Stop a clip (fire-and-forget, no confirmation)."""
         self._send("/live/clip_slot/stop", [track_id, clip_id])
 
     async def create_clip(
         self, track_id: int, clip_id: int, length: float
     ) -> None:
-        """Create a new MIDI clip."""
+        """Create a new MIDI clip (fire-and-forget, no confirmation)."""
         self._send("/live/clip_slot/create_clip", [track_id, clip_id, length])
 
     async def delete_clip(self, track_id: int, clip_id: int) -> None:
-        """Delete a clip."""
+        """Delete a clip (fire-and-forget, no confirmation)."""
         self._send("/live/clip_slot/delete_clip", [track_id, clip_id])
 
     async def add_note(
@@ -274,7 +326,7 @@ class AbletonOSCGateway(AbletonGateway):
         velocity: int,
         mute: bool = False,
     ) -> None:
-        """Add a MIDI note to a clip."""
+        """Add a MIDI note to a clip (fire-and-forget, no confirmation)."""
         self._send(
             "/live/clip/add_new_notes",
             [track_id, clip_id, pitch, start, duration, velocity, 1 if mute else 0],
@@ -289,7 +341,7 @@ class AbletonOSCGateway(AbletonGateway):
         pitch_start: int = 0,
         pitch_span: int = 128,
     ) -> None:
-        """Remove notes from a clip within a time/pitch range."""
+        """Remove notes from a clip within a time/pitch range (fire-and-forget)."""
         self._send(
             "/live/clip/remove_notes",
             [track_id, clip_id, start_time, time_span, pitch_start, pitch_span],
@@ -361,7 +413,7 @@ class AbletonOSCGateway(AbletonGateway):
     async def set_device_parameter(
         self, track_id: int, device_id: int, parameter_id: int, value: float
     ) -> None:
-        """Set device parameter value."""
+        """Set device parameter value (fire-and-forget, no confirmation)."""
         self._send(
             "/live/device/set/parameter/value",
             [track_id, device_id, parameter_id, value],
@@ -370,7 +422,7 @@ class AbletonOSCGateway(AbletonGateway):
     async def bypass_device(
         self, track_id: int, device_id: int, bypass: bool
     ) -> None:
-        """Bypass or enable a device."""
+        """Bypass or enable a device (fire-and-forget, no confirmation)."""
         self._send(
             "/live/device/set/enabled",
             [track_id, device_id, 0 if bypass else 1],

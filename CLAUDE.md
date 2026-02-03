@@ -86,9 +86,25 @@ Coverage requirement: 85% minimum (enforced by pytest-cov).
 
 Default ports: 11000 (send), 11001 (receive). The `OSCClient` in `infrastructure/osc_client.py` handles bidirectional communication with AbletonOSC remote script.
 
+## Logging
+
+JSON-formatted structured logging with file output by default. Configuration via environment variables:
+
+```bash
+# Environment variables
+ABLETON_MCP_LOG_LEVEL=INFO      # DEBUG, INFO, WARNING, ERROR, CRITICAL
+ABLETON_MCP_LOG_FILE=ableton_mcp.log  # Log file path
+ABLETON_MCP_LOG_TO_CONSOLE=false      # Also output to console (true/false)
+```
+
+Log files use rotation (10MB max, 5 backups). Example log entry:
+```json
+{"event": "Connected to Ableton Live", "host": "127.0.0.1", "logger": "gateway", "level": "info", "timestamp": "2024-01-15T10:30:00.123Z"}
+```
+
 ## Code Standards
 
 - Python 3.11+ with strict mypy (`disallow_untyped_defs = true`)
 - Line length: 100 (black + ruff)
 - Pydantic models for domain entities with validation
-- Structlog for structured logging
+- Structlog for JSON structured logging to file

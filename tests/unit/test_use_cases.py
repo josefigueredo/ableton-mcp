@@ -11,6 +11,8 @@ from ableton_mcp.application.use_cases import (
     AnalyzeHarmonyUseCase,
     ConnectToAbletonRequest,
     ConnectToAbletonUseCase,
+    GetClipContentRequest,
+    GetClipContentUseCase,
     GetSongInfoRequest,
     GetSongInfoUseCase,
     TrackOperationRequest,
@@ -26,30 +28,49 @@ from ableton_mcp.infrastructure.services import MusicTheoryServiceImpl
 class TestConnectToAbletonUseCase:
     """Test cases for connection use case."""
 
+    def _create_mock_gateway(self) -> Mock:
+        """Create a mock gateway with song data responses."""
+        mock_gateway = Mock()
+        mock_gateway.get_tempo = AsyncMock(return_value=120.0)
+        mock_gateway.get_time_signature = AsyncMock(return_value=(4, 4))
+        mock_gateway.get_song_time = AsyncMock(return_value=0.0)
+        mock_gateway.get_is_playing = AsyncMock(return_value=False)
+        mock_gateway.get_num_tracks = AsyncMock(return_value=2)
+        mock_gateway.get_track_name = AsyncMock(side_effect=["Track 1", "Track 2"])
+        mock_gateway.get_track_volume = AsyncMock(return_value=0.85)
+        mock_gateway.get_track_pan = AsyncMock(return_value=0.0)
+        return mock_gateway
+
     async def test_successful_connection(self) -> None:
         """Test successful connection to Ableton."""
         mock_service = Mock()
         mock_service.connect = AsyncMock()
-        
-        use_case = ConnectToAbletonUseCase(mock_service)
+        mock_repository = Mock()
+        mock_repository.save_song = AsyncMock()
+        mock_gateway = self._create_mock_gateway()
+
+        use_case = ConnectToAbletonUseCase(mock_service, mock_repository, mock_gateway)
         request = ConnectToAbletonRequest(host="localhost", send_port=11000)
-        
+
         result = await use_case.execute(request)
-        
+
         assert result.success is True
         assert "Connected to Ableton Live" in result.message
         mock_service.connect.assert_called_once_with("localhost", 11000, 11001)
+        mock_repository.save_song.assert_called_once()
 
     async def test_connection_failure(self) -> None:
         """Test connection failure handling."""
         mock_service = Mock()
         mock_service.connect = AsyncMock(side_effect=Exception("Connection refused"))
-        
-        use_case = ConnectToAbletonUseCase(mock_service)
+        mock_repository = Mock()
+        mock_gateway = Mock()
+
+        use_case = ConnectToAbletonUseCase(mock_service, mock_repository, mock_gateway)
         request = ConnectToAbletonRequest()
-        
+
         result = await use_case.execute(request)
-        
+
         assert result.success is False
         assert "Failed to connect" in result.message
         assert result.error_code == "CONNECTION_FAILED"
@@ -377,10 +398,94 @@ class TestAnalyzeHarmonyUseCase:
         """Test harmony analysis with empty notes."""
         music_theory_service = MusicTheoryServiceImpl()
         use_case = AnalyzeHarmonyUseCase(music_theory_service)
-        
+
         request = AnalyzeHarmonyRequest(notes=[])
-        
+
         result = await use_case.execute(request)
-        
+
         assert result.success is False
         assert "No notes provided" in result.message
+
+
+class TestGetClipContentUseCase:
+    """Test cases for get clip content use case."""
+
+    async def test_get_clip_content_success(self) -> None:
+        """Test successfully getting clip content."""
+        song_repository = InMemorySongRepository()
+        clip_service = Mock()
+
+        # Mock clip service to return notes
+        mock_notes = [
+            {"pitch": 60, "start": 0.0, "duration": 1.0, "velocity": 100, "mute": False},
+            {"pitch": 64, "start": 1.0, "duration": 0.5, "velocity": 80, "mute": False},
+        ]
+        clip_service.get_clip_notes = AsyncMock(return_value=mock_notes)
+
+        # Setup song with track
+        song = Song(name="Test Song")
+        track = Track(name="MIDI Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = GetClipContentUseCase(clip_service, song_repository)
+        request = GetClipContentRequest(track_id=0, clip_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["note_count"] == 2
+        assert len(result.data["notes"]) == 2
+        # Verify note names are added
+        assert result.data["notes"][0]["note_name"] == "C4"
+        assert result.data["notes"][1]["note_name"] == "E4"
+        clip_service.get_clip_notes.assert_called_once_with(0, 0)
+
+    async def test_get_clip_content_empty_clip(self) -> None:
+        """Test getting content from an empty clip."""
+        song_repository = InMemorySongRepository()
+        clip_service = Mock()
+        clip_service.get_clip_notes = AsyncMock(return_value=[])
+
+        song = Song(name="Test Song")
+        track = Track(name="MIDI Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = GetClipContentUseCase(clip_service, song_repository)
+        request = GetClipContentRequest(track_id=0, clip_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["note_count"] == 0
+        assert result.data["notes"] == []
+
+    async def test_get_clip_content_track_not_found(self) -> None:
+        """Test getting clip content from non-existent track."""
+        song_repository = InMemorySongRepository()
+        clip_service = Mock()
+
+        song = Song(name="Test Song")
+        await song_repository.save_song(song)
+
+        use_case = GetClipContentUseCase(clip_service, song_repository)
+        request = GetClipContentRequest(track_id=999, clip_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is False
+        assert "Track 999 not found" in result.message
+
+    async def test_get_clip_content_no_song(self) -> None:
+        """Test getting clip content when no song is loaded."""
+        song_repository = InMemorySongRepository()
+        clip_service = Mock()
+
+        use_case = GetClipContentUseCase(clip_service, song_repository)
+        request = GetClipContentRequest(track_id=0, clip_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is False
+        assert "No active song" in result.message

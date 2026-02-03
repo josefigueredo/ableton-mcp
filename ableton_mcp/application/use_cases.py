@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+import structlog
+
 from ableton_mcp.core.exceptions import (
     ClipNotFoundError,
     DeviceNotFoundError,
@@ -41,6 +43,7 @@ from ableton_mcp.domain.services import (
 @dataclass
 class UseCaseResult:
     """Result wrapper for use case operations."""
+
     success: bool
     data: Optional[Any] = None
     message: Optional[str] = None
@@ -49,7 +52,7 @@ class UseCaseResult:
 
 class UseCase(ABC):
     """Base class for all use cases."""
-    
+
     @abstractmethod
     async def execute(self, *args, **kwargs) -> UseCaseResult:
         """Execute the use case."""
@@ -59,6 +62,7 @@ class UseCase(ABC):
 @dataclass
 class ConnectToAbletonRequest:
     """Request to connect to Ableton Live."""
+
     host: str = "127.0.0.1"
     send_port: int = 11000
     receive_port: int = 11001
@@ -67,15 +71,26 @@ class ConnectToAbletonRequest:
 class ConnectToAbletonUseCase(UseCase):
     """Use case for establishing connection to Ableton Live."""
 
-    def __init__(self, connection_service: Any) -> None:  # Type hint would be interface
+    def __init__(
+        self,
+        connection_service: Any,
+        song_repository: SongRepository,
+        ableton_gateway: Any,
+    ) -> None:
         self._connection_service = connection_service
+        self._song_repository = song_repository
+        self._gateway = ableton_gateway
 
     async def execute(self, request: ConnectToAbletonRequest) -> UseCaseResult:
-        """Execute connection to Ableton Live."""
+        """Execute connection to Ableton Live and sync song data."""
         try:
             await self._connection_service.connect(
                 request.host, request.send_port, request.receive_port
             )
+
+            # Fetch and store song data from Ableton
+            await self._sync_song_data()
+
             return UseCaseResult(
                 success=True,
                 message=f"Connected to Ableton Live at {request.host}:{request.send_port}",
@@ -87,10 +102,62 @@ class ConnectToAbletonUseCase(UseCase):
                 error_code="CONNECTION_FAILED",
             )
 
+    async def _sync_song_data(self) -> None:
+        """Fetch song data from Ableton and store in repository."""
+        # Get basic song info
+        tempo = await self._gateway.get_tempo()
+        time_sig = await self._gateway.get_time_signature()
+        song_time = await self._gateway.get_song_time()
+        is_playing = await self._gateway.get_is_playing()
+        num_tracks = await self._gateway.get_num_tracks()
+
+        # Build track list
+        tracks: List[Track] = []
+        for i in range(num_tracks):
+            try:
+                track_name = await self._gateway.get_track_name(i)
+                track_volume = await self._gateway.get_track_volume(i)
+                track_pan = await self._gateway.get_track_pan(i)
+                has_midi_input = await self._gateway.get_track_has_midi_input(i)
+                track_type = TrackType.MIDI if has_midi_input else TrackType.AUDIO
+                is_muted = await self._gateway.get_track_mute(i)
+                is_soloed = await self._gateway.get_track_solo(i)
+                is_armed = await self._gateway.get_track_arm(i)
+
+                track = Track(
+                    id=EntityId(value=f"track_{i}"),
+                    name=track_name,
+                    track_type=track_type,
+                    volume=track_volume,
+                    pan=track_pan,
+                    is_muted=is_muted,
+                    is_soloed=is_soloed,
+                    is_armed=is_armed,
+                )
+                tracks.append(track)
+            except Exception:
+                # Skip tracks that fail to load
+                continue
+
+        # Build and save song
+        song = Song(
+            id=EntityId(value="current_song"),
+            name="Live Set",
+            tempo=tempo,
+            time_signature_numerator=time_sig[0],
+            time_signature_denominator=time_sig[1],
+            current_song_time=song_time,
+            transport_state=TransportState.PLAYING if is_playing else TransportState.STOPPED,
+            tracks=tracks,
+        )
+
+        await self._song_repository.save_song(song)
+
 
 @dataclass
 class TransportControlRequest:
     """Request for transport control operations."""
+
     action: str  # play, stop, record, get_status
     value: Optional[float] = None
 
@@ -148,6 +215,7 @@ class TransportControlUseCase(UseCase):
 @dataclass
 class GetSongInfoRequest:
     """Request for getting song information."""
+
     include_tracks: bool = True
     include_devices: bool = True
     include_clips: bool = False
@@ -225,6 +293,7 @@ class GetSongInfoUseCase(UseCase):
 @dataclass
 class TrackOperationRequest:
     """Request for track operations."""
+
     action: str  # get_info, set_volume, set_pan, mute, solo, arm, create, delete
     track_id: Optional[int] = None
     value: Optional[float] = None
@@ -255,12 +324,12 @@ class TrackOperationsUseCase(UseCase):
             if request.action == "create":
                 track_type = TrackType(request.track_type or "midi")
                 track_name = request.name or f"New {track_type.value.title()} Track"
-                
+
                 new_track = Track(
                     name=track_name,
                     track_type=track_type,
                 )
-                
+
                 await self._track_service.create_track(new_track)
                 return UseCaseResult(
                     success=True,
@@ -294,7 +363,7 @@ class TrackOperationsUseCase(UseCase):
             elif request.action == "set_volume":
                 if request.value is None:
                     raise InvalidParameterError("Volume value is required")
-                
+
                 track.volume = max(0.0, min(1.0, request.value))
                 await self._track_service.set_track_volume(request.track_id, track.volume)
                 return UseCaseResult(
@@ -304,12 +373,10 @@ class TrackOperationsUseCase(UseCase):
             elif request.action == "set_pan":
                 if request.value is None:
                     raise InvalidParameterError("Pan value is required")
-                
+
                 track.pan = max(-1.0, min(1.0, request.value))
                 await self._track_service.set_track_pan(request.track_id, track.pan)
-                return UseCaseResult(
-                    success=True, message=f"Set track pan to {track.pan:.2f}"
-                )
+                return UseCaseResult(success=True, message=f"Set track pan to {track.pan:.2f}")
 
             elif request.action in ["mute", "solo", "arm"]:
                 if request.action == "mute":
@@ -335,9 +402,7 @@ class TrackOperationsUseCase(UseCase):
                 )
 
         except (TrackNotFoundError, InvalidParameterError) as e:
-            return UseCaseResult(
-                success=False, message=str(e), error_code=e.error_code
-            )
+            return UseCaseResult(success=False, message=str(e), error_code=e.error_code)
         except Exception as e:
             return UseCaseResult(
                 success=False,
@@ -349,6 +414,7 @@ class TrackOperationsUseCase(UseCase):
 @dataclass
 class AddNotesRequest:
     """Request for adding MIDI notes to a clip."""
+
     track_id: int
     clip_id: int
     notes: List[Dict[str, Any]]
@@ -382,12 +448,9 @@ class AddNotesUseCase(UseCase):
             if not track:
                 raise TrackNotFoundError(f"Track {request.track_id} not found")
 
-            clip = track.get_clip(request.clip_id)
-            if not clip:
-                raise ClipNotFoundError(f"Clip {request.clip_id} not found")
-
-            if clip.clip_type != ClipType.MIDI:
-                raise InvalidParameterError("Can only add notes to MIDI clips")
+            # Check track type - only MIDI tracks can have notes added
+            if track.track_type != TrackType.MIDI:
+                raise InvalidParameterError("Can only add notes to MIDI tracks")
 
             # Convert note dictionaries to Note objects
             notes = []
@@ -406,6 +469,7 @@ class AddNotesUseCase(UseCase):
             # Apply music theory processing
             if request.scale_filter:
                 from ableton_mcp.domain.entities import MusicKey
+
                 # This would use actual key detection in a real implementation
                 key = MusicKey(root=0, mode=request.scale_filter)
                 notes = await self._music_theory_service.filter_notes_to_scale(notes, key)
@@ -418,25 +482,19 @@ class AddNotesUseCase(UseCase):
                 if not ValidationService.validate_note_range(note):
                     raise ValidationError(f"Note {note.pitch} is out of range")
 
-            # Add notes to clip
+            # Add notes directly to Ableton via clip service
+            # This sends OSC commands directly without requiring local clip cache
             for note in notes:
-                clip.add_note(note)
-                await self._clip_service.add_note(
-                    request.track_id, request.clip_id, note
-                )
-
-            await self._clip_repository.update_clip(clip)
+                await self._clip_service.add_note(request.track_id, request.clip_id, note)
 
             return UseCaseResult(
                 success=True,
                 message=f"Added {len(notes)} notes to clip",
-                data={"notes_added": len(notes), "clip_length": clip.length},
+                data={"notes_added": len(notes)},
             )
 
         except (TrackNotFoundError, ClipNotFoundError, InvalidParameterError, ValidationError) as e:
-            return UseCaseResult(
-                success=False, message=str(e), error_code=e.error_code
-            )
+            return UseCaseResult(success=False, message=str(e), error_code=e.error_code)
         except Exception as e:
             return UseCaseResult(
                 success=False,
@@ -448,6 +506,7 @@ class AddNotesUseCase(UseCase):
 @dataclass
 class AnalyzeHarmonyRequest:
     """Request for harmony analysis."""
+
     notes: List[int]
     suggest_progressions: bool = False
     genre: str = "pop"
@@ -470,13 +529,11 @@ class AnalyzeHarmonyUseCase(UseCase):
                 )
 
             # Convert MIDI notes to Note objects for analysis
-            notes = [
-                Note(pitch=pitch, start=0.0, duration=1.0) for pitch in request.notes
-            ]
+            notes = [Note(pitch=pitch, start=0.0, duration=1.0) for pitch in request.notes]
 
             # Analyze key
             keys = await self._music_theory_service.analyze_key(notes)
-            
+
             result_data = {
                 "input_notes": request.notes,
                 "detected_keys": [],
@@ -515,6 +572,7 @@ class AnalyzeHarmonyUseCase(UseCase):
 @dataclass
 class AnalyzeTempoRequest:
     """Request for tempo analysis."""
+
     current_bpm: Optional[float] = None
     genre: Optional[str] = None
     energy_level: str = "medium"
@@ -572,4 +630,269 @@ class AnalyzeTempoUseCase(UseCase):
                 success=False,
                 message=f"Tempo analysis error: {str(e)}",
                 error_code="TEMPO_ANALYSIS_ERROR",
+            )
+
+
+@dataclass
+class MixAnalysisRequest:
+    """Request for mix analysis."""
+
+    analyze_levels: bool = True
+    analyze_frequency: bool = True
+    target_lufs: float = -14.0
+    platform: str = "spotify"
+
+
+class MixAnalysisUseCase(UseCase):
+    """Use case for mix analysis and suggestions."""
+
+    def __init__(
+        self,
+        mixing_service: MixingService,
+        song_repository: SongRepository,
+    ) -> None:
+        self._mixing_service = mixing_service
+        self._song_repository = song_repository
+
+    async def execute(self, request: MixAnalysisRequest) -> UseCaseResult:
+        """Analyze mix and provide professional mixing suggestions."""
+        try:
+            song = await self._song_repository.get_current_song()
+            if not song:
+                return UseCaseResult(success=False, message="No active song")
+
+            result_data: Dict[str, Any] = {
+                "track_count": len(song.tracks),
+                "platform": request.platform,
+                "target_lufs": request.target_lufs,
+            }
+
+            # Analyze frequency balance
+            if request.analyze_frequency:
+                frequency_analysis = await self._mixing_service.analyze_frequency_balance(
+                    song.tracks
+                )
+                result_data["frequency_analysis"] = frequency_analysis.data
+
+            # Analyze stereo image
+            stereo_analysis = await self._mixing_service.analyze_stereo_image(song.tracks)
+            result_data["stereo_analysis"] = stereo_analysis.data
+
+            # Analyze levels and get LUFS targets
+            if request.analyze_levels:
+                # Infer genre from song context or use default
+                genre = "pop"  # Could be enhanced to detect from song
+                target_lufs, target_peak = await self._mixing_service.calculate_lufs_target(
+                    genre, request.platform
+                )
+                result_data["loudness_targets"] = {
+                    "target_lufs": target_lufs,
+                    "target_peak_db": target_peak,
+                    "platform": request.platform,
+                }
+
+                # Analyze individual track levels
+                level_analysis = []
+                for i, track in enumerate(song.tracks):
+                    track_info = {
+                        "index": i,
+                        "name": track.name,
+                        "volume": track.volume,
+                        "pan": track.pan,
+                        "is_muted": track.is_muted,
+                        "is_soloed": track.is_soloed,
+                    }
+                    # Flag potential issues
+                    if track.volume > 0.9:
+                        track_info["warning"] = "Volume near maximum - watch for clipping"
+                    level_analysis.append(track_info)
+                result_data["track_levels"] = level_analysis
+
+            # Get EQ suggestions for each track
+            eq_suggestions = []
+            for track in song.tracks[:5]:  # Limit to first 5 tracks
+                suggestions = await self._mixing_service.suggest_eq_adjustments(track)
+                if suggestions:
+                    eq_suggestions.append(
+                        {
+                            "track": track.name,
+                            "suggestions": suggestions,
+                        }
+                    )
+            result_data["eq_suggestions"] = eq_suggestions
+
+            return UseCaseResult(success=True, data=result_data)
+
+        except Exception as e:
+            return UseCaseResult(
+                success=False,
+                message=f"Mix analysis error: {str(e)}",
+                error_code="MIX_ANALYSIS_ERROR",
+            )
+
+
+@dataclass
+class ArrangementSuggestionsRequest:
+    """Request for arrangement suggestions."""
+
+    song_length: Optional[float] = None
+    genre: Optional[str] = None
+    current_structure: Optional[List[str]] = None
+
+
+@dataclass
+class GetClipContentRequest:
+    """Request for getting clip content (MIDI notes)."""
+
+    track_id: int
+    clip_id: int
+
+
+class GetClipContentUseCase(UseCase):
+    """Use case for retrieving MIDI notes from a clip."""
+
+    def __init__(
+        self,
+        clip_service: Any,
+        song_repository: SongRepository,
+    ) -> None:
+        self._clip_service = clip_service
+        self._song_repository = song_repository
+        self._logger = structlog.get_logger(__name__)
+
+    async def execute(self, request: GetClipContentRequest) -> UseCaseResult:
+        """Get MIDI notes from a clip."""
+        try:
+            self._logger.info(
+                "Getting clip content",
+                track_id=request.track_id,
+                clip_id=request.clip_id,
+            )
+
+            song = await self._song_repository.get_current_song()
+            if not song:
+                return UseCaseResult(success=False, message="No active song")
+
+            track = song.get_track_by_index(request.track_id)
+            if not track:
+                raise TrackNotFoundError(f"Track {request.track_id} not found")
+
+            # Get notes from Ableton via clip service
+            notes = await self._clip_service.get_clip_notes(request.track_id, request.clip_id)
+
+            # Convert MIDI pitch to note names for display
+            note_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+            notes_with_names = []
+            for note in notes:
+                pitch = note["pitch"]
+                octave = (pitch // 12) - 1
+                note_name = note_names[pitch % 12]
+                notes_with_names.append(
+                    {
+                        **note,
+                        "note_name": f"{note_name}{octave}",
+                    }
+                )
+
+            self._logger.info(
+                "Retrieved clip content",
+                track_id=request.track_id,
+                clip_id=request.clip_id,
+                note_count=len(notes),
+            )
+
+            return UseCaseResult(
+                success=True,
+                data={
+                    "track_id": request.track_id,
+                    "clip_id": request.clip_id,
+                    "note_count": len(notes),
+                    "notes": notes_with_names,
+                },
+            )
+
+        except TrackNotFoundError as e:
+            self._logger.warning(
+                "Track not found",
+                track_id=request.track_id,
+                error=str(e),
+            )
+            return UseCaseResult(success=False, message=str(e), error_code=e.error_code)
+        except ClipNotFoundError as e:
+            self._logger.warning(
+                "Clip not found",
+                track_id=request.track_id,
+                clip_id=request.clip_id,
+                error=str(e),
+            )
+            return UseCaseResult(success=False, message=str(e), error_code=e.error_code)
+        except Exception as e:
+            self._logger.error(
+                "Error getting clip content",
+                track_id=request.track_id,
+                clip_id=request.clip_id,
+                error=str(e),
+            )
+            return UseCaseResult(
+                success=False,
+                message=f"Error getting clip content: {str(e)}",
+                error_code="CLIP_CONTENT_ERROR",
+            )
+
+
+class ArrangementSuggestionsUseCase(UseCase):
+    """Use case for arrangement analysis and suggestions."""
+
+    def __init__(
+        self,
+        arrangement_service: ArrangementService,
+        song_repository: SongRepository,
+    ) -> None:
+        self._arrangement_service = arrangement_service
+        self._song_repository = song_repository
+
+    async def execute(self, request: ArrangementSuggestionsRequest) -> UseCaseResult:
+        """Analyze arrangement and provide structure suggestions."""
+        try:
+            song = await self._song_repository.get_current_song()
+            if not song:
+                return UseCaseResult(success=False, message="No active song")
+
+            genre = request.genre or "pop"
+            result_data: Dict[str, Any] = {
+                "genre": genre,
+                "tempo": song.tempo,
+                "track_count": len(song.tracks),
+            }
+
+            # Analyze current song structure
+            structure_analysis = await self._arrangement_service.analyze_song_structure(song)
+            result_data["current_structure"] = structure_analysis.data
+
+            # Get arrangement improvement suggestions
+            improvements = await self._arrangement_service.suggest_arrangement_improvements(
+                song, genre
+            )
+            result_data["improvement_suggestions"] = improvements
+
+            # Get recommended section lengths
+            song_length = request.song_length or 128.0  # Default 128 bars
+            section_lengths = await self._arrangement_service.suggest_section_lengths(
+                genre, song_length
+            )
+            result_data["recommended_section_lengths"] = section_lengths
+
+            # Calculate energy curve
+            energy_curve = await self._arrangement_service.calculate_energy_curve(song)
+            result_data["energy_curve"] = [
+                {"time": time, "energy": energy} for time, energy in energy_curve
+            ]
+
+            return UseCaseResult(success=True, data=result_data)
+
+        except Exception as e:
+            return UseCaseResult(
+                success=False,
+                message=f"Arrangement analysis error: {str(e)}",
+                error_code="ARRANGEMENT_ANALYSIS_ERROR",
             )

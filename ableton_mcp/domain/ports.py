@@ -132,8 +132,18 @@ class AbletonGateway(ABC):
         ...
 
     @abstractmethod
+    async def get_track_mute(self, track_id: int) -> bool:
+        """Get track mute state."""
+        ...
+
+    @abstractmethod
     async def set_track_mute(self, track_id: int, mute: bool) -> None:
         """Set track mute state."""
+        ...
+
+    @abstractmethod
+    async def get_track_solo(self, track_id: int) -> bool:
+        """Get track solo state."""
         ...
 
     @abstractmethod
@@ -142,31 +152,38 @@ class AbletonGateway(ABC):
         ...
 
     @abstractmethod
+    async def get_track_arm(self, track_id: int) -> bool:
+        """Get track record arm state."""
+        ...
+
+    @abstractmethod
     async def set_track_arm(self, track_id: int, arm: bool) -> None:
         """Set track record arm state."""
         ...
 
     @abstractmethod
-    async def create_midi_track(self, index: int = -1) -> int:
-        """Create a new MIDI track.
+    async def get_track_has_midi_input(self, track_id: int) -> bool:
+        """Check if track has MIDI input capability.
 
-        Args:
-            index: Position to insert track (-1 for end)
-
-        Returns:
-            Index of the created track
+        Used to determine if a track is a MIDI track vs audio track.
         """
         ...
 
     @abstractmethod
-    async def create_audio_track(self, index: int = -1) -> int:
-        """Create a new audio track.
+    async def create_midi_track(self, index: int = -1) -> None:
+        """Create a new MIDI track (fire-and-forget, no confirmation).
 
         Args:
             index: Position to insert track (-1 for end)
+        """
+        ...
 
-        Returns:
-            Index of the created track
+    @abstractmethod
+    async def create_audio_track(self, index: int = -1) -> None:
+        """Create a new audio track (fire-and-forget, no confirmation).
+
+        Args:
+            index: Position to insert track (-1 for end)
         """
         ...
 
