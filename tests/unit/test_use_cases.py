@@ -1,0 +1,386 @@
+"""Unit tests for use cases."""
+
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+
+from ableton_mcp.application.use_cases import (
+    AddNotesRequest,
+    AddNotesUseCase,
+    AnalyzeHarmonyRequest,
+    AnalyzeHarmonyUseCase,
+    ConnectToAbletonRequest,
+    ConnectToAbletonUseCase,
+    GetSongInfoRequest,
+    GetSongInfoUseCase,
+    TrackOperationRequest,
+    TrackOperationsUseCase,
+    TransportControlRequest,
+    TransportControlUseCase,
+)
+from ableton_mcp.domain.entities import Clip, ClipType, Song, Track, TrackType
+from ableton_mcp.infrastructure.repositories import InMemorySongRepository
+from ableton_mcp.infrastructure.services import MusicTheoryServiceImpl
+
+
+class TestConnectToAbletonUseCase:
+    """Test cases for connection use case."""
+
+    async def test_successful_connection(self) -> None:
+        """Test successful connection to Ableton."""
+        mock_service = Mock()
+        mock_service.connect = AsyncMock()
+        
+        use_case = ConnectToAbletonUseCase(mock_service)
+        request = ConnectToAbletonRequest(host="localhost", send_port=11000)
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        assert "Connected to Ableton Live" in result.message
+        mock_service.connect.assert_called_once_with("localhost", 11000, 11001)
+
+    async def test_connection_failure(self) -> None:
+        """Test connection failure handling."""
+        mock_service = Mock()
+        mock_service.connect = AsyncMock(side_effect=Exception("Connection refused"))
+        
+        use_case = ConnectToAbletonUseCase(mock_service)
+        request = ConnectToAbletonRequest()
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is False
+        assert "Failed to connect" in result.message
+        assert result.error_code == "CONNECTION_FAILED"
+
+
+class TestTransportControlUseCase:
+    """Test cases for transport control use case."""
+
+    async def test_start_playing(self) -> None:
+        """Test starting playback."""
+        mock_transport = Mock()
+        mock_transport.start_playing = AsyncMock()
+        mock_repository = Mock()
+        
+        use_case = TransportControlUseCase(mock_transport, mock_repository)
+        request = TransportControlRequest(action="play")
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        assert "Playback started" in result.message
+        mock_transport.start_playing.assert_called_once()
+
+    async def test_stop_playing(self) -> None:
+        """Test stopping playback."""
+        mock_transport = Mock()
+        mock_transport.stop_playing = AsyncMock()
+        mock_repository = Mock()
+        
+        use_case = TransportControlUseCase(mock_transport, mock_repository)
+        request = TransportControlRequest(action="stop")
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        assert "Playback stopped" in result.message
+        mock_transport.stop_playing.assert_called_once()
+
+    async def test_get_status_with_song(self) -> None:
+        """Test getting transport status with active song."""
+        mock_transport = Mock()
+        mock_repository = Mock()
+        
+        sample_song = Song(name="Test Song", tempo=128.0)
+        mock_repository.get_current_song = AsyncMock(return_value=sample_song)
+        
+        use_case = TransportControlUseCase(mock_transport, mock_repository)
+        request = TransportControlRequest(action="get_status")
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["tempo"] == 128.0
+
+    async def test_invalid_action(self) -> None:
+        """Test invalid transport action."""
+        mock_transport = Mock()
+        mock_repository = Mock()
+        
+        use_case = TransportControlUseCase(mock_transport, mock_repository)
+        request = TransportControlRequest(action="invalid")
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is False
+        assert "Unknown transport action" in result.message
+
+
+class TestGetSongInfoUseCase:
+    """Test cases for song info use case."""
+
+    async def test_get_song_info_basic(self) -> None:
+        """Test getting basic song information."""
+        repository = InMemorySongRepository()
+        song = Song(name="Test Song", tempo=120.0, key="C major")
+        await repository.save_song(song)
+        
+        use_case = GetSongInfoUseCase(repository)
+        request = GetSongInfoRequest(include_tracks=False)
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        assert result.data["name"] == "Test Song"
+        assert result.data["tempo"] == 120.0
+        assert result.data["key"] == "C major"
+
+    async def test_get_song_info_with_tracks(self) -> None:
+        """Test getting song info including tracks."""
+        repository = InMemorySongRepository()
+        song = Song(name="Test Song", tempo=120.0)
+        
+        track = Track(name="MIDI Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        
+        await repository.save_song(song)
+        
+        use_case = GetSongInfoUseCase(repository)
+        request = GetSongInfoRequest(include_tracks=True)
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        assert "tracks" in result.data
+        assert len(result.data["tracks"]) == 1
+        assert result.data["tracks"][0]["name"] == "MIDI Track"
+
+    async def test_get_song_info_no_song(self) -> None:
+        """Test getting song info when no song is loaded."""
+        repository = InMemorySongRepository()
+        
+        use_case = GetSongInfoUseCase(repository)
+        request = GetSongInfoRequest()
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is False
+        assert "No active song" in result.message
+
+
+class TestTrackOperationsUseCase:
+    """Test cases for track operations use case."""
+
+    async def test_create_midi_track(self) -> None:
+        """Test creating a MIDI track."""
+        song_repository = InMemorySongRepository()
+        track_repository = Mock()
+        track_service = Mock()
+        track_service.create_track = AsyncMock()
+        
+        song = Song(name="Test Song")
+        await song_repository.save_song(song)
+        
+        use_case = TrackOperationsUseCase(track_repository, song_repository, track_service)
+        request = TrackOperationRequest(action="create", track_type="midi", name="New MIDI")
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        assert "Created midi track" in result.message
+        track_service.create_track.assert_called_once()
+
+    async def test_set_track_volume(self) -> None:
+        """Test setting track volume."""
+        song_repository = InMemorySongRepository()
+        track_repository = Mock()
+        track_service = Mock()
+        track_service.set_track_volume = AsyncMock()
+        
+        song = Song(name="Test Song")
+        track = Track(name="Test Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+        
+        use_case = TrackOperationsUseCase(track_repository, song_repository, track_service)
+        request = TrackOperationRequest(action="set_volume", track_id=0, value=0.8)
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        track_service.set_track_volume.assert_called_once_with(0, 0.8)
+
+    async def test_track_not_found(self) -> None:
+        """Test operation on non-existent track."""
+        song_repository = InMemorySongRepository()
+        track_repository = Mock()
+        track_service = Mock()
+        
+        song = Song(name="Test Song")
+        await song_repository.save_song(song)
+        
+        use_case = TrackOperationsUseCase(track_repository, song_repository, track_service)
+        request = TrackOperationRequest(action="get_info", track_id=999)
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is False
+        assert "Track 999 not found" in result.message
+
+
+class TestAddNotesUseCase:
+    """Test cases for add notes use case."""
+
+    async def test_add_notes_success(self) -> None:
+        """Test successfully adding notes to a clip."""
+        from ableton_mcp.infrastructure.repositories import InMemoryClipRepository
+        
+        song_repository = InMemorySongRepository()
+        clip_repository = InMemoryClipRepository()
+        music_theory_service = MusicTheoryServiceImpl()
+        clip_service = Mock()
+        clip_service.add_note = AsyncMock()
+        
+        # Setup song with track and clip
+        song = Song(name="Test Song")
+        track = Track(name="MIDI Track", track_type=TrackType.MIDI)
+        clip = Clip(name="Test Clip", clip_type=ClipType.MIDI, length=4.0)
+        
+        track.set_clip(0, clip)
+        song.add_track(track)
+        
+        await song_repository.save_song(song)
+        await clip_repository.create_clip(clip)
+        
+        use_case = AddNotesUseCase(clip_repository, song_repository, music_theory_service, clip_service)
+        
+        notes_data = [
+            {"pitch": 60, "start": 0.0, "duration": 1.0, "velocity": 100}
+        ]
+        request = AddNotesRequest(track_id=0, clip_id=0, notes=notes_data)
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        assert "Added 1 notes" in result.message
+
+    async def test_add_notes_with_quantization(self) -> None:
+        """Test adding notes with quantization."""
+        from ableton_mcp.infrastructure.repositories import InMemoryClipRepository
+        
+        song_repository = InMemorySongRepository()
+        clip_repository = InMemoryClipRepository()
+        music_theory_service = MusicTheoryServiceImpl()
+        clip_service = Mock()
+        clip_service.add_note = AsyncMock()
+        
+        # Setup song with track and clip
+        song = Song(name="Test Song")
+        track = Track(name="MIDI Track", track_type=TrackType.MIDI)
+        clip = Clip(name="Test Clip", clip_type=ClipType.MIDI, length=4.0)
+        
+        track.set_clip(0, clip)
+        song.add_track(track)
+        
+        await song_repository.save_song(song)
+        await clip_repository.create_clip(clip)
+        
+        use_case = AddNotesUseCase(clip_repository, song_repository, music_theory_service, clip_service)
+        
+        # Note with off-grid timing
+        notes_data = [
+            {"pitch": 60, "start": 0.1, "duration": 0.9}
+        ]
+        request = AddNotesRequest(track_id=0, clip_id=0, notes=notes_data, quantize=True)
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+
+    async def test_add_notes_to_audio_clip_fails(self) -> None:
+        """Test that adding notes to audio clip fails."""
+        from ableton_mcp.infrastructure.repositories import InMemoryClipRepository
+        
+        song_repository = InMemorySongRepository()
+        clip_repository = InMemoryClipRepository()
+        music_theory_service = MusicTheoryServiceImpl()
+        clip_service = Mock()
+        
+        # Setup song with audio clip
+        song = Song(name="Test Song")
+        track = Track(name="Audio Track", track_type=TrackType.AUDIO)
+        clip = Clip(name="Audio Clip", clip_type=ClipType.AUDIO, length=4.0)
+        
+        track.set_clip(0, clip)
+        song.add_track(track)
+        
+        await song_repository.save_song(song)
+        await clip_repository.create_clip(clip)
+        
+        use_case = AddNotesUseCase(clip_repository, song_repository, music_theory_service, clip_service)
+        
+        notes_data = [
+            {"pitch": 60, "start": 0.0, "duration": 1.0}
+        ]
+        request = AddNotesRequest(track_id=0, clip_id=0, notes=notes_data)
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is False
+        assert "Can only add notes to MIDI clips" in result.message
+
+
+class TestAnalyzeHarmonyUseCase:
+    """Test cases for harmony analysis use case."""
+
+    async def test_analyze_c_major_chord(self) -> None:
+        """Test analyzing C major chord."""
+        music_theory_service = MusicTheoryServiceImpl()
+        use_case = AnalyzeHarmonyUseCase(music_theory_service)
+        
+        # C major triad
+        request = AnalyzeHarmonyRequest(notes=[60, 64, 67])  # C, E, G
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        assert result.data is not None
+        assert "detected_keys" in result.data
+        assert len(result.data["detected_keys"]) > 0
+        
+        # Should detect C major as primary key
+        best_key = result.data["detected_keys"][0]
+        assert best_key["root"] == 0  # C
+        assert best_key["mode"] == "major"
+
+    async def test_analyze_harmony_with_progressions(self) -> None:
+        """Test harmony analysis with progression suggestions."""
+        music_theory_service = MusicTheoryServiceImpl()
+        use_case = AnalyzeHarmonyUseCase(music_theory_service)
+        
+        request = AnalyzeHarmonyRequest(
+            notes=[60, 64, 67],
+            suggest_progressions=True,
+            genre="pop"
+        )
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is True
+        assert "chord_progressions" in result.data
+        assert len(result.data["chord_progressions"]) > 0
+
+    async def test_analyze_harmony_empty_notes(self) -> None:
+        """Test harmony analysis with empty notes."""
+        music_theory_service = MusicTheoryServiceImpl()
+        use_case = AnalyzeHarmonyUseCase(music_theory_service)
+        
+        request = AnalyzeHarmonyRequest(notes=[])
+        
+        result = await use_case.execute(request)
+        
+        assert result.success is False
+        assert "No notes provided" in result.message
