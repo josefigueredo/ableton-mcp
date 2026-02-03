@@ -26,6 +26,7 @@ from ableton_mcp.application.use_cases import (
     GetSongInfoUseCase,
     MixAnalysisRequest,
     MixAnalysisUseCase,
+    RefreshSongDataUseCase,
     TrackOperationRequest,
     TrackOperationsUseCase,
     TransportControlRequest,
@@ -52,6 +53,7 @@ class AbletonMCPServer:
         mix_analysis_use_case: MixAnalysisUseCase,
         arrangement_suggestions_use_case: ArrangementSuggestionsUseCase,
         clip_content_use_case: GetClipContentUseCase,
+        refresh_song_data_use_case: RefreshSongDataUseCase,
     ) -> None:
         """Initialize MCP server with use cases."""
         self.server = Server("ableton-live-mcp")
@@ -67,6 +69,7 @@ class AbletonMCPServer:
         self._mix_analysis_use_case = mix_analysis_use_case
         self._arrangement_suggestions_use_case = arrangement_suggestions_use_case
         self._clip_content_use_case = clip_content_use_case
+        self._refresh_song_data_use_case = refresh_song_data_use_case
 
         self._setup_handlers()
 
@@ -394,6 +397,14 @@ class AbletonMCPServer:
                         "required": ["track_id", "clip_id"],
                     },
                 ),
+                types.Tool(
+                    name="refresh_song_data",
+                    description="Refresh cached song data from Ableton Live. Use this when you've made manual changes in Ableton (renamed tracks, added/deleted tracks, etc.) and need to sync the cached state.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {},
+                    },
+                ),
             ]
 
         @self.server.call_tool()
@@ -483,6 +494,9 @@ class AbletonMCPServer:
                     )
                     result = await self._clip_content_use_case.execute(request)
 
+                elif name == "refresh_song_data":
+                    result = await self._refresh_song_data_use_case.execute()
+
                 else:
                     result = UseCaseResult(
                         success=False, message=f"Unknown tool: {name}", error_code="UNKNOWN_TOOL"
@@ -492,12 +506,12 @@ class AbletonMCPServer:
 
             except AbletonMCPError as e:
                 logger.error("MCP error", tool=name, error=str(e))
-                return [types.TextContent(type="text", text=f"❌ {e.error_code}: {e.message}")]
+                return [types.TextContent(type="text", text=f"[ERROR] {e.error_code}: {e.message}")]
 
             except Exception as e:
                 logger.error("Unexpected error", tool=name, error=str(e))
                 return [
-                    types.TextContent(type="text", text=f"❌ Unexpected error in {name}: {str(e)}")
+                    types.TextContent(type="text", text=f"[ERROR] Unexpected error in {name}: {str(e)}")
                 ]
 
     async def _format_result(self, result: UseCaseResult) -> List[types.TextContent]:
@@ -506,16 +520,16 @@ class AbletonMCPServer:
             if result.data:
                 # Format structured data nicely
                 formatted_data = await self._format_data(result.data)
-                message = result.message or "✅ Operation completed successfully"
+                message = result.message or "Operation completed successfully"
                 return [types.TextContent(type="text", text=f"{message}\n\n{formatted_data}")]
             else:
                 return [
                     types.TextContent(
-                        type="text", text=result.message or "✅ Operation completed successfully"
+                        type="text", text=result.message or "Operation completed successfully"
                     )
                 ]
         else:
-            error_prefix = "❌"
+            error_prefix = "[ERROR]"
             if result.error_code:
                 error_prefix += f" [{result.error_code}]"
 
@@ -528,20 +542,20 @@ class AbletonMCPServer:
 
             # Special formatting for song info
             if "tempo" in data and "time_signature" in data:
-                formatted_lines.append(f"🎵 **Song Information**")
-                formatted_lines.append(f"• Name: {data.get('name', 'Untitled')}")
-                formatted_lines.append(f"• Tempo: {data.get('tempo')} BPM")
-                formatted_lines.append(f"• Time Signature: {data.get('time_signature')}")
+                formatted_lines.append("**Song Information**")
+                formatted_lines.append(f"- Name: {data.get('name', 'Untitled')}")
+                formatted_lines.append(f"- Tempo: {data.get('tempo')} BPM")
+                formatted_lines.append(f"- Time Signature: {data.get('time_signature')}")
                 if data.get("key"):
-                    formatted_lines.append(f"• Key: {data.get('key')}")
+                    formatted_lines.append(f"- Key: {data.get('key')}")
                 formatted_lines.append(
-                    f"• Transport: {data.get('transport_state', 'unknown').title()}"
+                    f"- Transport: {data.get('transport_state', 'unknown').title()}"
                 )
 
                 if data.get("tracks"):
-                    formatted_lines.append(f"\n📊 **Tracks ({len(data['tracks'])})**")
+                    formatted_lines.append(f"\n**Tracks ({len(data['tracks'])})**")
                     for i, track in enumerate(data["tracks"][:5]):  # Show first 5
-                        track_info = f"• {i}: {track['name']} ({track['type']})"
+                        track_info = f"- {i}: {track['name']} ({track['type']})"
                         if track.get("muted"):
                             track_info += " [MUTED]"
                         if track.get("soloed"):
@@ -553,23 +567,23 @@ class AbletonMCPServer:
 
             # Special formatting for harmony analysis
             elif "detected_keys" in data:
-                formatted_lines.append("🎼 **Harmony Analysis**")
+                formatted_lines.append("**Harmony Analysis**")
 
                 if data["detected_keys"]:
                     best_key = data["detected_keys"][0]
                     formatted_lines.append(
-                        f"• **Primary Key**: {best_key['root_name']} {best_key['mode']} ({best_key['confidence']:.1%} confidence)"
+                        f"- **Primary Key**: {best_key['root_name']} {best_key['mode']} ({best_key['confidence']:.1%} confidence)"
                     )
 
                     if len(data["detected_keys"]) > 1:
-                        formatted_lines.append("• **Alternatives**:")
+                        formatted_lines.append("- **Alternatives**:")
                         for key in data["detected_keys"][1:3]:
                             formatted_lines.append(
                                 f"  - {key['root_name']} {key['mode']} ({key['confidence']:.1%})"
                             )
 
                 if data.get("chord_progressions"):
-                    formatted_lines.append("\n🎹 **Suggested Chord Progressions**:")
+                    formatted_lines.append("\n**Suggested Chord Progressions**:")
                     for i, progression in enumerate(data["chord_progressions"][:3]):
                         note_names = [
                             "C",
@@ -586,40 +600,40 @@ class AbletonMCPServer:
                             "B",
                         ]
                         chord_names = [note_names[root] for root in progression]
-                        formatted_lines.append(f"• {' - '.join(chord_names)}")
+                        formatted_lines.append(f"- {' - '.join(chord_names)}")
 
             # Special formatting for tempo analysis
             elif "current_tempo" in data:
-                formatted_lines.append("🥁 **Tempo Analysis**")
-                formatted_lines.append(f"• Current: {data['current_tempo']} BPM")
+                formatted_lines.append("**Tempo Analysis**")
+                formatted_lines.append(f"- Current: {data['current_tempo']} BPM")
 
                 if data.get("suggestions", {}).get("genre_optimal"):
                     formatted_lines.append(
-                        f"• Optimal for genre: {data['suggestions']['genre_optimal']} BPM"
+                        f"- Optimal for genre: {data['suggestions']['genre_optimal']} BPM"
                     )
 
                 if data.get("suggestions", {}).get("relationships"):
                     rels = data["suggestions"]["relationships"]
-                    formatted_lines.append("\n🔢 **Related Tempos**:")
-                    formatted_lines.append(f"• Half-time: {rels.get('half_time', 0):.0f} BPM")
-                    formatted_lines.append(f"• Double-time: {rels.get('double_time', 0):.0f} BPM")
+                    formatted_lines.append("\n**Related Tempos**:")
+                    formatted_lines.append(f"- Half-time: {rels.get('half_time', 0):.0f} BPM")
+                    formatted_lines.append(f"- Double-time: {rels.get('double_time', 0):.0f} BPM")
 
             # Special formatting for clip content
             elif "note_count" in data and "notes" in data:
-                formatted_lines.append("🎹 **Clip Content**")
-                formatted_lines.append(f"• Track: {data.get('track_id', 'N/A')}")
-                formatted_lines.append(f"• Clip: {data.get('clip_id', 'N/A')}")
-                formatted_lines.append(f"• Total Notes: {data['note_count']}")
+                formatted_lines.append("**Clip Content**")
+                formatted_lines.append(f"- Track: {data.get('track_id', 'N/A')}")
+                formatted_lines.append(f"- Clip: {data.get('clip_id', 'N/A')}")
+                formatted_lines.append(f"- Total Notes: {data['note_count']}")
 
                 if data["notes"]:
-                    formatted_lines.append("\n📝 **Notes**:")
+                    formatted_lines.append("\n**Notes**:")
                     # Show first 20 notes to avoid overwhelming output
                     display_notes = data["notes"][:20]
                     for note in display_notes:
                         note_name = note.get("note_name", f"MIDI {note['pitch']}")
                         mute_str = " [MUTED]" if note.get("mute") else ""
                         formatted_lines.append(
-                            f"• {note_name} | Start: {note['start']:.2f} | "
+                            f"- {note_name} | Start: {note['start']:.2f} | "
                             f"Duration: {note['duration']:.2f} | "
                             f"Velocity: {note['velocity']}{mute_str}"
                         )
@@ -633,9 +647,9 @@ class AbletonMCPServer:
             else:
                 for key, value in data.items():
                     if isinstance(value, (dict, list)):
-                        formatted_lines.append(f"• {key}: {str(value)[:100]}...")
+                        formatted_lines.append(f"- {key}: {str(value)[:100]}...")
                     else:
-                        formatted_lines.append(f"• {key}: {value}")
+                        formatted_lines.append(f"- {key}: {value}")
 
             return "\n".join(formatted_lines)
 

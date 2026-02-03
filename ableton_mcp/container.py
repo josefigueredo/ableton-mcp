@@ -17,6 +17,7 @@ from ableton_mcp.application.use_cases import (
     GetClipContentUseCase,
     GetSongInfoUseCase,
     MixAnalysisUseCase,
+    RefreshSongDataUseCase,
     TrackOperationsUseCase,
     TransportControlUseCase,
 )
@@ -84,11 +85,18 @@ class Container(containers.DeclarativeContainer):
 
     song_info_use_case = providers.Factory(GetSongInfoUseCase, song_repository=song_repository)
 
+    refresh_song_data_use_case = providers.Factory(
+        RefreshSongDataUseCase,
+        song_repository=song_repository,
+        ableton_gateway=ableton_gateway,
+    )
+
     track_ops_use_case = providers.Factory(
         TrackOperationsUseCase,
         track_repository=track_repository,
         song_repository=song_repository,
         track_service=track_service,
+        refresh_use_case=refresh_song_data_use_case,
     )
 
     add_notes_use_case = providers.Factory(
@@ -134,4 +142,5 @@ class Container(containers.DeclarativeContainer):
         mix_analysis_use_case=mix_analysis_use_case,
         arrangement_suggestions_use_case=arrangement_suggestions_use_case,
         clip_content_use_case=clip_content_use_case,
+        refresh_song_data_use_case=refresh_song_data_use_case,
     )

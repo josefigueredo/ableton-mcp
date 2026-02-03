@@ -155,6 +155,97 @@ class ConnectToAbletonUseCase(UseCase):
 
 
 @dataclass
+class RefreshSongDataRequest:
+    """Request for refreshing song data cache from Ableton."""
+
+    pass
+
+
+class RefreshSongDataUseCase(UseCase):
+    """Use case for refreshing cached song data from Ableton Live."""
+
+    def __init__(
+        self,
+        song_repository: SongRepository,
+        ableton_gateway: Any,
+    ) -> None:
+        self._song_repository = song_repository
+        self._gateway = ableton_gateway
+        self._logger = structlog.get_logger(__name__)
+
+    async def execute(
+        self, request: Optional[RefreshSongDataRequest] = None
+    ) -> UseCaseResult:
+        """Refresh song data from Ableton Live."""
+        try:
+            self._logger.info("Refreshing song data from Ableton")
+            await self._sync_song_data()
+            self._logger.info("Song data refreshed successfully")
+            return UseCaseResult(
+                success=True,
+                message="Song data refreshed from Ableton Live",
+            )
+        except Exception as e:
+            self._logger.error("Failed to refresh song data", error=str(e))
+            return UseCaseResult(
+                success=False,
+                message=f"Failed to refresh song data: {str(e)}",
+                error_code="REFRESH_FAILED",
+            )
+
+    async def _sync_song_data(self) -> None:
+        """Fetch song data from Ableton and store in repository."""
+        # Get basic song info
+        tempo = await self._gateway.get_tempo()
+        time_sig = await self._gateway.get_time_signature()
+        song_time = await self._gateway.get_song_time()
+        is_playing = await self._gateway.get_is_playing()
+        num_tracks = await self._gateway.get_num_tracks()
+
+        # Build track list
+        tracks: List[Track] = []
+        for i in range(num_tracks):
+            try:
+                track_name = await self._gateway.get_track_name(i)
+                track_volume = await self._gateway.get_track_volume(i)
+                track_pan = await self._gateway.get_track_pan(i)
+                has_midi_input = await self._gateway.get_track_has_midi_input(i)
+                track_type = TrackType.MIDI if has_midi_input else TrackType.AUDIO
+                is_muted = await self._gateway.get_track_mute(i)
+                is_soloed = await self._gateway.get_track_solo(i)
+                is_armed = await self._gateway.get_track_arm(i)
+
+                track = Track(
+                    id=EntityId(value=f"track_{i}"),
+                    name=track_name,
+                    track_type=track_type,
+                    volume=track_volume,
+                    pan=track_pan,
+                    is_muted=is_muted,
+                    is_soloed=is_soloed,
+                    is_armed=is_armed,
+                )
+                tracks.append(track)
+            except Exception:
+                # Skip tracks that fail to load
+                continue
+
+        # Build and save song
+        song = Song(
+            id=EntityId(value="current_song"),
+            name="Live Set",
+            tempo=tempo,
+            time_signature_numerator=time_sig[0],
+            time_signature_denominator=time_sig[1],
+            current_song_time=song_time,
+            transport_state=TransportState.PLAYING if is_playing else TransportState.STOPPED,
+            tracks=tracks,
+        )
+
+        await self._song_repository.save_song(song)
+
+
+@dataclass
 class TransportControlRequest:
     """Request for transport control operations."""
 
@@ -309,10 +400,13 @@ class TrackOperationsUseCase(UseCase):
         track_repository: TrackRepository,
         song_repository: SongRepository,
         track_service: Any,
+        refresh_use_case: Optional["RefreshSongDataUseCase"] = None,
     ) -> None:
         self._track_repository = track_repository
         self._song_repository = song_repository
         self._track_service = track_service
+        self._refresh_use_case = refresh_use_case
+        self._logger = structlog.get_logger(__name__)
 
     async def execute(self, request: TrackOperationRequest) -> UseCaseResult:
         """Execute track operation."""
@@ -331,6 +425,12 @@ class TrackOperationsUseCase(UseCase):
                 )
 
                 await self._track_service.create_track(new_track)
+
+                # Auto-refresh song data after track creation
+                if self._refresh_use_case:
+                    self._logger.info("Auto-refreshing song data after track creation")
+                    await self._refresh_use_case.execute()
+
                 return UseCaseResult(
                     success=True,
                     message=f"Created {track_type.value} track: {track_name}",

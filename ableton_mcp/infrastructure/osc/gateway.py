@@ -328,7 +328,7 @@ class AbletonOSCGateway(AbletonGateway):
     ) -> None:
         """Add a MIDI note to a clip (fire-and-forget, no confirmation)."""
         self._send(
-            "/live/clip/add_new_notes",
+            "/live/clip/add/notes",
             [track_id, clip_id, pitch, start, duration, velocity, 1 if mute else 0],
         )
 
@@ -351,7 +351,8 @@ class AbletonOSCGateway(AbletonGateway):
         self, track_id: int, clip_id: int
     ) -> List[Dict[str, Any]]:
         """Get all notes in a clip."""
-        response = await self._request("/live/clip/get/notes", [track_id, clip_id])
+        # Get all notes from start (0.0) with a large time span (1000 beats)
+        response = await self._request("/live/clip/get/notes", [track_id, clip_id, 0.0, 1000.0])
 
         # AbletonOSC returns notes in flat format:
         # [note_count, pitch1, start1, duration1, velocity1, mute1, ...]
