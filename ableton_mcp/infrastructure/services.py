@@ -1,7 +1,7 @@
 """Concrete implementations of domain services."""
 
 import math
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from ableton_mcp.domain.entities import (
     AnalysisResult,
@@ -68,6 +68,10 @@ class MusicTheoryServiceImpl(MusicTheoryService):
         }
     }
 
+    # Diatonic scales (7-note scales) should be preferred over pentatonic/blues
+    DIATONIC_SCALES = {"major", "minor", "dorian", "phrygian", "lydian", "mixolydian",
+                       "locrian", "harmonic_minor", "melodic_minor"}
+
     async def analyze_key(self, notes: List[Note]) -> List[MusicKey]:
         """Analyze the musical key of given notes."""
         if not notes:
@@ -75,34 +79,41 @@ class MusicTheoryServiceImpl(MusicTheoryService):
 
         # Extract pitch classes from notes
         pitch_classes = list(set(note.pitch_class for note in notes))
-        
+
         # Calculate key candidates with confidence scores
         key_candidates = []
-        
+
         for scale_name, scale_intervals in self.SCALES.items():
             for root in range(12):
                 scale_notes = set((root + interval) % 12 for interval in scale_intervals)
-                
-                # Calculate match score using Jaccard similarity
-                intersection = len(set(pitch_classes).intersection(scale_notes))
-                union = len(set(pitch_classes).union(scale_notes))
-                
-                if union > 0:
-                    confidence = intersection / union
-                    
-                    # Boost confidence for exact matches
-                    if set(pitch_classes).issubset(scale_notes):
-                        confidence += 0.2
-                    
-                    # Penalize for missing important scale degrees
-                    if root not in pitch_classes:  # Missing tonic
-                        confidence *= 0.8
-                    
-                    if confidence > 0.3:  # Only include reasonable matches
-                        key_candidates.append(
-                            MusicKey(root=root, mode=scale_name, confidence=min(1.0, confidence))
-                        )
-        
+
+                # Calculate match score - how many input notes are in the scale
+                input_set = set(pitch_classes)
+                matches = len(input_set.intersection(scale_notes))
+
+                # Base confidence: percentage of input notes that fit the scale
+                if len(pitch_classes) > 0:
+                    confidence = matches / len(pitch_classes)
+                else:
+                    confidence = 0.0
+
+                # Boost confidence for exact matches (all notes fit)
+                if input_set.issubset(scale_notes):
+                    confidence += 0.1
+
+                # Prefer diatonic scales over pentatonic/blues for better harmonic context
+                if scale_name in self.DIATONIC_SCALES:
+                    confidence += 0.15
+
+                # Penalize for missing important scale degrees
+                if root not in pitch_classes:  # Missing tonic
+                    confidence *= 0.8
+
+                if confidence > 0.3:  # Only include reasonable matches
+                    key_candidates.append(
+                        MusicKey(root=root, mode=scale_name, confidence=min(1.0, confidence))
+                    )
+
         # Sort by confidence and return top candidates
         return sorted(key_candidates, key=lambda k: k.confidence, reverse=True)[:5]
 
@@ -443,7 +454,7 @@ class MixingServiceImpl(MixingService):
             }
         )
 
-    async def suggest_eq_adjustments(self, track: Track) -> List[Dict[str, float]]:
+    async def suggest_eq_adjustments(self, track: Track) -> List[Dict[str, Any]]:
         """Suggest EQ adjustments for a track."""
         # Placeholder implementation based on track type
         suggestions = []

@@ -459,8 +459,8 @@ CLIP_OSC_COMMANDS = {
         'response': None
     },
     '/live/clip/get/notes': {
-        'params': ['track_id: int', 'clip_id: int', 'from_time: float', 'time_span: float'],
-        'response': 'list[float]'
+        'params': ['track_id: int', 'clip_id: int'],
+        'response': '[track_id, clip_id, pitch1, start1, duration1, velocity1, mute1, ...]'
     },
     '/live/clip/remove/notes': {
         'params': ['track_id: int', 'clip_id: int', 'from_time: float', 'time_span: float'],

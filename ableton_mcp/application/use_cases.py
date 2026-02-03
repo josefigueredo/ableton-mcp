@@ -54,7 +54,7 @@ class UseCase(ABC):
     """Base class for all use cases."""
 
     @abstractmethod
-    async def execute(self, *args, **kwargs) -> UseCaseResult:
+    async def execute(self, *args: Any, **kwargs: Any) -> UseCaseResult:
         """Execute the use case."""
         pass
 
@@ -634,7 +634,7 @@ class AnalyzeHarmonyUseCase(UseCase):
             # Analyze key
             keys = await self._music_theory_service.analyze_key(notes)
 
-            result_data = {
+            result_data: Dict[str, Any] = {
                 "input_notes": request.notes,
                 "detected_keys": [],
                 "chord_progressions": [],
@@ -700,7 +700,7 @@ class AnalyzeTempoUseCase(UseCase):
                 else:
                     current_bpm = 120.0
 
-            result_data = {
+            result_data: Dict[str, Any] = {
                 "current_tempo": current_bpm,
                 "analysis": {
                     "energy_level": request.energy_level,

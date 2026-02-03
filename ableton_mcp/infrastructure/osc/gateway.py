@@ -351,20 +351,19 @@ class AbletonOSCGateway(AbletonGateway):
         self, track_id: int, clip_id: int
     ) -> List[Dict[str, Any]]:
         """Get all notes in a clip."""
-        # Get all notes from start (0.0) with a large time span (1000 beats)
-        response = await self._request("/live/clip/get/notes", [track_id, clip_id, 0.0, 1000.0])
+        response = await self._request("/live/clip/get/notes", [track_id, clip_id])
 
         # AbletonOSC returns notes in flat format:
-        # [note_count, pitch1, start1, duration1, velocity1, mute1, ...]
+        # [track_id, clip_id, pitch1, start1, duration1, velocity1, mute1, ...]
         notes: List[Dict[str, Any]] = []
-        if not response:
+        if not response or len(response) < 2:
             return notes
 
-        # First element is note count
-        note_count = int(response[0])
-        data = response[1:]
+        # Skip track_id and clip_id prefix, notes data starts at index 2
+        data = response[2:]
 
         # Each note has 5 values: pitch, start, duration, velocity, mute
+        note_count = len(data) // 5
         for i in range(note_count):
             base = i * 5
             if base + 5 <= len(data):

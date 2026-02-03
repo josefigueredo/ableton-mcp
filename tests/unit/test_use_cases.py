@@ -351,7 +351,7 @@ class TestAddNotesUseCase:
         result = await use_case.execute(request)
         
         assert result.success is False
-        assert "Can only add notes to MIDI clips" in result.message
+        assert "Can only add notes to MIDI tracks" in result.message
 
 
 class TestAnalyzeHarmonyUseCase:
@@ -489,3 +489,264 @@ class TestGetClipContentUseCase:
 
         assert result.success is False
         assert "No active song" in result.message
+
+
+class TestAnalyzeTempoUseCase:
+    """Test cases for tempo analysis use case."""
+
+    async def test_analyze_tempo_with_current_bpm(self) -> None:
+        """Test tempo analysis with provided BPM."""
+        from ableton_mcp.application.use_cases import AnalyzeTempoRequest, AnalyzeTempoUseCase
+        from ableton_mcp.infrastructure.services import TempoAnalysisServiceImpl
+
+        tempo_service = TempoAnalysisServiceImpl()
+        song_repository = InMemorySongRepository()
+
+        use_case = AnalyzeTempoUseCase(tempo_service, song_repository)
+        request = AnalyzeTempoRequest(
+            current_bpm=128.0,
+            genre="house",
+            energy_level="medium",
+        )
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["current_tempo"] == 128.0
+        assert "suggestions" in result.data
+        assert "relationships" in result.data["suggestions"]
+
+    async def test_analyze_tempo_from_song(self) -> None:
+        """Test tempo analysis using song's tempo."""
+        from ableton_mcp.application.use_cases import AnalyzeTempoRequest, AnalyzeTempoUseCase
+        from ableton_mcp.domain.entities import EntityId
+        from ableton_mcp.infrastructure.services import TempoAnalysisServiceImpl
+
+        tempo_service = TempoAnalysisServiceImpl()
+        song_repository = InMemorySongRepository()
+
+        # Create and save a song with specific tempo
+        song = Song(id=EntityId("song-1"), name="Test", tempo=135.0, tracks=[])
+        await song_repository.save_song(song)
+
+        use_case = AnalyzeTempoUseCase(tempo_service, song_repository)
+        request = AnalyzeTempoRequest(
+            current_bpm=None,  # Will use song's tempo
+            genre="techno",
+            energy_level="high",
+        )
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["current_tempo"] == 135.0
+
+    async def test_analyze_tempo_no_song_defaults(self) -> None:
+        """Test tempo analysis with no song defaults to 120 BPM."""
+        from ableton_mcp.application.use_cases import AnalyzeTempoRequest, AnalyzeTempoUseCase
+        from ableton_mcp.infrastructure.services import TempoAnalysisServiceImpl
+
+        tempo_service = TempoAnalysisServiceImpl()
+        song_repository = InMemorySongRepository()
+
+        use_case = AnalyzeTempoUseCase(tempo_service, song_repository)
+        request = AnalyzeTempoRequest(
+            current_bpm=None,
+            genre="pop",
+            energy_level="medium",
+        )
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["current_tempo"] == 120.0
+
+    async def test_analyze_tempo_without_genre(self) -> None:
+        """Test tempo analysis without genre."""
+        from ableton_mcp.application.use_cases import AnalyzeTempoRequest, AnalyzeTempoUseCase
+        from ableton_mcp.infrastructure.services import TempoAnalysisServiceImpl
+
+        tempo_service = TempoAnalysisServiceImpl()
+        song_repository = InMemorySongRepository()
+
+        use_case = AnalyzeTempoUseCase(tempo_service, song_repository)
+        request = AnalyzeTempoRequest(
+            current_bpm=120.0,
+            genre=None,
+            energy_level="medium",
+        )
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        # Should not have genre_optimal suggestion
+        assert "genre_optimal" not in result.data["suggestions"]
+
+
+class TestMixAnalysisUseCase:
+    """Test cases for mix analysis use case."""
+
+    async def test_mix_analysis_success(self) -> None:
+        """Test successful mix analysis."""
+        from ableton_mcp.application.use_cases import MixAnalysisRequest, MixAnalysisUseCase
+        from ableton_mcp.domain.entities import EntityId
+        from ableton_mcp.infrastructure.services import MixingServiceImpl
+
+        mixing_service = MixingServiceImpl()
+        song_repository = InMemorySongRepository()
+
+        # Create song with tracks
+        tracks = [
+            Track(
+                id=EntityId("track-1"),
+                name="Kick Drum",
+                track_type=TrackType.MIDI,
+                volume=0.8,
+            ),
+            Track(
+                id=EntityId("track-2"),
+                name="Bass",
+                track_type=TrackType.MIDI,
+                volume=0.7,
+            ),
+        ]
+        song = Song(id=EntityId("song-1"), name="Test", tempo=120.0, tracks=tracks)
+        await song_repository.save_song(song)
+
+        use_case = MixAnalysisUseCase(mixing_service, song_repository)
+        request = MixAnalysisRequest(
+            analyze_levels=True,
+            analyze_frequency=True,
+            target_lufs=-14.0,
+            platform="spotify",
+        )
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert "track_count" in result.data
+        assert "frequency_analysis" in result.data
+        assert "stereo_analysis" in result.data
+        assert "loudness_targets" in result.data
+
+    async def test_mix_analysis_no_song(self) -> None:
+        """Test mix analysis with no active song."""
+        from ableton_mcp.application.use_cases import MixAnalysisRequest, MixAnalysisUseCase
+        from ableton_mcp.infrastructure.services import MixingServiceImpl
+
+        mixing_service = MixingServiceImpl()
+        song_repository = InMemorySongRepository()
+
+        use_case = MixAnalysisUseCase(mixing_service, song_repository)
+        request = MixAnalysisRequest()
+
+        result = await use_case.execute(request)
+
+        assert result.success is False
+        assert "No active song" in result.message
+
+    async def test_mix_analysis_high_volume_warning(self) -> None:
+        """Test mix analysis warns about high volume tracks."""
+        from ableton_mcp.application.use_cases import MixAnalysisRequest, MixAnalysisUseCase
+        from ableton_mcp.domain.entities import EntityId
+        from ableton_mcp.infrastructure.services import MixingServiceImpl
+
+        mixing_service = MixingServiceImpl()
+        song_repository = InMemorySongRepository()
+
+        tracks = [
+            Track(
+                id=EntityId("track-1"),
+                name="Loud Track",
+                track_type=TrackType.MIDI,
+                volume=0.95,  # Very high volume
+            ),
+        ]
+        song = Song(id=EntityId("song-1"), name="Test", tempo=120.0, tracks=tracks)
+        await song_repository.save_song(song)
+
+        use_case = MixAnalysisUseCase(mixing_service, song_repository)
+        request = MixAnalysisRequest(analyze_levels=True)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert any(
+            "warning" in track_info
+            for track_info in result.data.get("track_levels", [])
+        )
+
+
+class TestArrangementSuggestionsUseCase:
+    """Test cases for arrangement suggestions use case."""
+
+    async def test_arrangement_suggestions_success(self) -> None:
+        """Test successful arrangement suggestions."""
+        from ableton_mcp.application.use_cases import (
+            ArrangementSuggestionsRequest,
+            ArrangementSuggestionsUseCase,
+        )
+        from ableton_mcp.domain.entities import EntityId
+        from ableton_mcp.infrastructure.services import ArrangementServiceImpl
+
+        arrangement_service = ArrangementServiceImpl()
+        song_repository = InMemorySongRepository()
+
+        tracks = [
+            Track(id=EntityId("track-1"), name="Track 1", track_type=TrackType.MIDI),
+        ]
+        song = Song(id=EntityId("song-1"), name="Test", tempo=120.0, tracks=tracks)
+        await song_repository.save_song(song)
+
+        use_case = ArrangementSuggestionsUseCase(arrangement_service, song_repository)
+        request = ArrangementSuggestionsRequest(genre="pop", song_length=128.0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert "current_structure" in result.data
+        assert "improvement_suggestions" in result.data
+        assert "recommended_section_lengths" in result.data
+        assert "energy_curve" in result.data
+
+    async def test_arrangement_suggestions_no_song(self) -> None:
+        """Test arrangement suggestions with no active song."""
+        from ableton_mcp.application.use_cases import (
+            ArrangementSuggestionsRequest,
+            ArrangementSuggestionsUseCase,
+        )
+        from ableton_mcp.infrastructure.services import ArrangementServiceImpl
+
+        arrangement_service = ArrangementServiceImpl()
+        song_repository = InMemorySongRepository()
+
+        use_case = ArrangementSuggestionsUseCase(arrangement_service, song_repository)
+        request = ArrangementSuggestionsRequest()
+
+        result = await use_case.execute(request)
+
+        assert result.success is False
+        assert "No active song" in result.message
+
+    async def test_arrangement_suggestions_default_genre(self) -> None:
+        """Test arrangement suggestions defaults to pop genre."""
+        from ableton_mcp.application.use_cases import (
+            ArrangementSuggestionsRequest,
+            ArrangementSuggestionsUseCase,
+        )
+        from ableton_mcp.domain.entities import EntityId
+        from ableton_mcp.infrastructure.services import ArrangementServiceImpl
+
+        arrangement_service = ArrangementServiceImpl()
+        song_repository = InMemorySongRepository()
+
+        song = Song(id=EntityId("song-1"), name="Test", tempo=120.0, tracks=[])
+        await song_repository.save_song(song)
+
+        use_case = ArrangementSuggestionsUseCase(arrangement_service, song_repository)
+        request = ArrangementSuggestionsRequest(genre=None)  # No genre specified
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["genre"] == "pop"  # Should default to pop

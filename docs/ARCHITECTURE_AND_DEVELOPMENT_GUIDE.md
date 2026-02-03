@@ -468,7 +468,7 @@ sequenceDiagram
     loop For each note
         AddNotesUseCase->>ClipService: add_note(track, clip, note)
         ClipService->>Gateway: add_note(params)
-        Gateway->>Ableton: /live/clip/add_new_notes
+        Gateway->>Ableton: /live/clip/add/notes
     end
 
     AddNotesUseCase-->>MCPServer: UseCaseResult(success, notes_added)

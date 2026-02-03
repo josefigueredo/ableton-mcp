@@ -1,7 +1,7 @@
 """Domain services containing business logic that doesn't belong to entities."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from ableton_mcp.domain.entities import (
     AnalysisResult,
@@ -87,7 +87,7 @@ class MixingService(ABC):
         pass
 
     @abstractmethod
-    async def suggest_eq_adjustments(self, track: Track) -> List[Dict[str, float]]:
+    async def suggest_eq_adjustments(self, track: Track) -> List[Dict[str, Any]]:
         """Suggest EQ adjustments for a track."""
         pass
 

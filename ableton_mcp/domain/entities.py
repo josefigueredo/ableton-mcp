@@ -94,9 +94,9 @@ class Parameter(BaseModel):
 
     @validator("value")
     def validate_value_range(cls, v: float, values: Dict[str, Any]) -> float:
-        min_val = values.get("min_value", 0.0)
-        max_val = values.get("max_value", 1.0)
-        return max(min_val, min(max_val, v))
+        min_val = float(values.get("min_value", 0.0))
+        max_val = float(values.get("max_value", 1.0))
+        return float(max(min_val, min(max_val, v)))
 
 
 class Device(BaseModel):
@@ -137,7 +137,7 @@ class Clip(BaseModel):
     @validator("loop_end")
     def validate_loop_end(cls, v: Optional[float], values: Dict[str, Any]) -> Optional[float]:
         if v is not None and "length" in values:
-            return min(v, values["length"])
+            return float(min(v, float(values["length"])))
         return v
 
     def add_note(self, note: Note) -> None:

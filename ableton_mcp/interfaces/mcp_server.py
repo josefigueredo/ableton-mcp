@@ -412,87 +412,88 @@ class AbletonMCPServer:
             """Handle tool calls with comprehensive error handling."""
             try:
                 logger.info("Tool called", tool=name, arguments=arguments)
+                result: UseCaseResult
 
                 if name == "connect_ableton":
-                    request = ConnectToAbletonRequest(
+                    connect_req = ConnectToAbletonRequest(
                         host=arguments.get("host", "127.0.0.1"),
                         send_port=arguments.get("send_port", 11000),
                         receive_port=arguments.get("receive_port", 11001),
                     )
-                    result = await self._connect_use_case.execute(request)
+                    result = await self._connect_use_case.execute(connect_req)
 
                 elif name == "transport_control":
-                    request = TransportControlRequest(
+                    transport_req = TransportControlRequest(
                         action=arguments["action"], value=arguments.get("value")
                     )
-                    result = await self._transport_use_case.execute(request)
+                    result = await self._transport_use_case.execute(transport_req)
 
                 elif name == "get_song_info":
-                    request = GetSongInfoRequest(
+                    song_info_req = GetSongInfoRequest(
                         include_tracks=arguments.get("include_tracks", True),
                         include_devices=arguments.get("include_devices", True),
                         include_clips=arguments.get("include_clips", False),
                     )
-                    result = await self._song_info_use_case.execute(request)
+                    result = await self._song_info_use_case.execute(song_info_req)
 
                 elif name == "track_operations":
-                    request = TrackOperationRequest(
+                    track_ops_req = TrackOperationRequest(
                         action=arguments["action"],
                         track_id=arguments.get("track_id"),
                         value=arguments.get("value"),
                         name=arguments.get("name"),
                         track_type=arguments.get("track_type"),
                     )
-                    result = await self._track_ops_use_case.execute(request)
+                    result = await self._track_ops_use_case.execute(track_ops_req)
 
                 elif name == "add_notes":
-                    request = AddNotesRequest(
+                    add_notes_req = AddNotesRequest(
                         track_id=arguments["track_id"],
                         clip_id=arguments["clip_id"],
                         notes=arguments["notes"],
                         quantize=arguments.get("quantize", False),
                         scale_filter=arguments.get("scale_filter"),
                     )
-                    result = await self._add_notes_use_case.execute(request)
+                    result = await self._add_notes_use_case.execute(add_notes_req)
 
                 elif name == "analyze_harmony":
-                    request = AnalyzeHarmonyRequest(
+                    harmony_req = AnalyzeHarmonyRequest(
                         notes=arguments.get("notes", []),
                         suggest_progressions=arguments.get("suggest_progressions", False),
                         genre=arguments.get("genre", "pop"),
                     )
-                    result = await self._harmony_analysis_use_case.execute(request)
+                    result = await self._harmony_analysis_use_case.execute(harmony_req)
 
                 elif name == "analyze_tempo":
-                    request = AnalyzeTempoRequest(
+                    tempo_req = AnalyzeTempoRequest(
                         current_bpm=arguments.get("current_bpm"),
                         genre=arguments.get("genre"),
                         energy_level=arguments.get("energy_level", "medium"),
                     )
-                    result = await self._tempo_analysis_use_case.execute(request)
+                    result = await self._tempo_analysis_use_case.execute(tempo_req)
 
                 elif name == "mix_analysis":
-                    request = MixAnalysisRequest(
+                    mix_req = MixAnalysisRequest(
                         analyze_levels=arguments.get("analyze_levels", True),
                         analyze_frequency=arguments.get("analyze_frequency", True),
                         target_lufs=arguments.get("target_lufs", -14.0),
                         platform=arguments.get("platform", "spotify"),
                     )
-                    result = await self._mix_analysis_use_case.execute(request)
+                    result = await self._mix_analysis_use_case.execute(mix_req)
 
                 elif name == "arrangement_suggestions":
-                    request = ArrangementSuggestionsRequest(
+                    arrangement_req = ArrangementSuggestionsRequest(
                         song_length=arguments.get("song_length"),
                         genre=arguments.get("genre"),
                         current_structure=arguments.get("current_structure"),
                     )
-                    result = await self._arrangement_suggestions_use_case.execute(request)
+                    result = await self._arrangement_suggestions_use_case.execute(arrangement_req)
 
                 elif name == "get_clip_content":
-                    request = GetClipContentRequest(
+                    clip_content_req = GetClipContentRequest(
                         track_id=arguments["track_id"], clip_id=arguments["clip_id"]
                     )
-                    result = await self._clip_content_use_case.execute(request)
+                    result = await self._clip_content_use_case.execute(clip_content_req)
 
                 elif name == "refresh_song_data":
                     result = await self._refresh_song_data_use_case.execute()

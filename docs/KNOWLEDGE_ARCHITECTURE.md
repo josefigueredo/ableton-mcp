@@ -22,7 +22,7 @@ This document explains the sophisticated knowledge architecture that transforms 
 
 The Ableton Live MCP Server contains **two distinct but interconnected layers**:
 
-1. **Knowledge Layer**: 11 comprehensive source of truth markdown files containing expert musical knowledge
+1. **Knowledge Layer**: 11 comprehensive source of truth markdown files in `docs/sources/` containing expert musical knowledge
 2. **Implementation Layer**: Python services that implement this knowledge as intelligent algorithms
 
 This architecture enables the MCP server to provide **professional-grade music intelligence** rather than basic automation.
@@ -38,22 +38,24 @@ Markdown Documentation → Python Implementation → MCP Tools → AI Assistant 
 
 ### The 11 Source of Truth Documents
 
+All source of truth documents are located in **`./docs/sources/`**:
+
 | **Document** | **Size** | **Core Knowledge Domain** | **Professional Applications** |
 |--------------|----------|---------------------------|-------------------------------|
-| `MUSIC_THEORY_SOURCE_OF_TRUTH.md` | 25KB | Scales, chords, progressions, harmony | Key detection, chord suggestions, harmonic analysis |
-| `MUSICAL_NOTATION_SOURCE_OF_TRUTH.md` | 25KB | Staff notation, rhythms, articulation | Note representation, timing, expression |
-| `RHYTHMS_SOURCE_OF_TRUTH.md` | 28KB | Time signatures, grooves, world rhythms | Tempo analysis, groove templates |
-| `ABLETON_LIVE_COMPLETE_REFERENCE.md` | 38KB | Live Object Model, OSC commands | Real-time DAW control, parameter automation |
-| `AUDIO_PROCESSING_SOURCE_OF_TRUTH.md` | 34KB | DSP, synthesis, effects processing | Audio analysis, processing suggestions |
-| `SONG_STRUCTURE_ARRANGEMENT_SOURCE_OF_TRUTH.md` | 39KB | Song forms, arrangement techniques | Structural analysis, arrangement suggestions |
-| `MIX_MASTERING_SOURCE_OF_TRUTH.md` | 36KB | Professional mixing, LUFS standards | Mix analysis, mastering guidance |
-| `GENRE_ANALYSIS_SOURCE_OF_TRUTH.md` | 37KB | Genre classification, cultural context | Genre-specific recommendations |
-| `INSTRUMENT_TECHNIQUES_SOURCE_OF_TRUTH.md` | 55KB | Performance techniques, humanization | Realistic MIDI programming |
-| `MUSIC_AI_TECHNIQUES_SOURCE_OF_TRUTH.md` | 71KB | AI music generation, neural synthesis | Advanced AI music features |
-| `MUSICAL_EXPRESSION_SOURCE_OF_TRUTH.md` | 85KB | Emotional communication, performance psychology | Expressive music creation |
-| `MUSIC_PSYCHOLOGY_SOURCE_OF_TRUTH.md` | 96KB | Music cognition, emotional response | Psychological music analysis |
-| `ABLETON_WORKFLOW_SOURCE_OF_TRUTH.md` | 84KB | Professional workflows, optimization | Workflow enhancement |
-| `MUSIC_SOFTWARE_ECOSYSTEM_SOURCE_OF_TRUTH.md` | 31KB | Cross-platform integration, standards | Ecosystem compatibility |
+| [`MUSIC_THEORY_SOURCE_OF_TRUTH.md`](sources/MUSIC_THEORY_SOURCE_OF_TRUTH.md) | 25KB | Scales, chords, progressions, harmony | Key detection, chord suggestions, harmonic analysis |
+| [`MUSICAL_NOTATION_SOURCE_OF_TRUTH.md`](sources/MUSICAL_NOTATION_SOURCE_OF_TRUTH.md) | 25KB | Staff notation, rhythms, articulation | Note representation, timing, expression |
+| [`RHYTHMS_SOURCE_OF_TRUTH.md`](sources/RHYTHMS_SOURCE_OF_TRUTH.md) | 28KB | Time signatures, grooves, world rhythms | Tempo analysis, groove templates |
+| [`ABLETON_LIVE_COMPLETE_REFERENCE.md`](sources/ABLETON_LIVE_COMPLETE_REFERENCE.md) | 38KB | Live Object Model, OSC commands | Real-time DAW control, parameter automation |
+| [`AUDIO_PROCESSING_SOURCE_OF_TRUTH.md`](sources/AUDIO_PROCESSING_SOURCE_OF_TRUTH.md) | 34KB | DSP, synthesis, effects processing | Audio analysis, processing suggestions |
+| [`SONG_STRUCTURE_ARRANGEMENT_SOURCE_OF_TRUTH.md`](sources/SONG_STRUCTURE_ARRANGEMENT_SOURCE_OF_TRUTH.md) | 39KB | Song forms, arrangement techniques | Structural analysis, arrangement suggestions |
+| [`MIX_MASTERING_SOURCE_OF_TRUTH.md`](sources/MIX_MASTERING_SOURCE_OF_TRUTH.md) | 36KB | Professional mixing, LUFS standards | Mix analysis, mastering guidance |
+| [`GENRE_ANALYSIS_SOURCE_OF_TRUTH.md`](sources/GENRE_ANALYSIS_SOURCE_OF_TRUTH.md) | 37KB | Genre classification, cultural context | Genre-specific recommendations |
+| [`INSTRUMENT_TECHNIQUES_SOURCE_OF_TRUTH.md`](sources/INSTRUMENT_TECHNIQUES_SOURCE_OF_TRUTH.md) | 55KB | Performance techniques, humanization | Realistic MIDI programming |
+| [`MUSIC_AI_TECHNIQUES_SOURCE_OF_TRUTH.md`](sources/MUSIC_AI_TECHNIQUES_SOURCE_OF_TRUTH.md) | 71KB | AI music generation, neural synthesis | Advanced AI music features |
+| [`MUSICAL_EXPRESSION_SOURCE_OF_TRUTH.md`](sources/MUSICAL_EXPRESSION_SOURCE_OF_TRUTH.md) | 85KB | Emotional communication, performance psychology | Expressive music creation |
+| [`MUSIC_PSYCHOLOGY_SOURCE_OF_TRUTH.md`](sources/MUSIC_PSYCHOLOGY_SOURCE_OF_TRUTH.md) | 96KB | Music cognition, emotional response | Psychological music analysis |
+| [`ABLETON_WORKFLOW_SOURCE_OF_TRUTH.md`](sources/ABLETON_WORKFLOW_SOURCE_OF_TRUTH.md) | 84KB | Professional workflows, optimization | Workflow enhancement |
+| [`MUSIC_SOFTWARE_ECOSYSTEM_SOURCE_OF_TRUTH.md`](sources/MUSIC_SOFTWARE_ECOSYSTEM_SOURCE_OF_TRUTH.md) | 31KB | Cross-platform integration, standards | Ecosystem compatibility |
 
 **Total Knowledge Base**: **784KB** of curated, professional music production expertise
 
@@ -68,7 +70,7 @@ Expert musical knowledge is researched, analyzed, and documented in comprehensiv
 
 **Example**: Music Theory Research
 ```markdown
-# From MUSIC_THEORY_SOURCE_OF_TRUTH.md
+# From docs/sources/MUSIC_THEORY_SOURCE_OF_TRUTH.md
 ## Scale Theory
 The major scale follows the interval pattern: W-W-H-W-W-W-H
 - C Major: C-D-E-F-G-A-B
@@ -150,27 +152,32 @@ async def analyze_harmony(notes: List[int]) -> AnalysisResult:
 ### Knowledge Integration Points
 
 #### 1. Music Theory Intelligence
-- **Source**: `MUSIC_THEORY_SOURCE_OF_TRUTH.md`
+
+- **Source**: `docs/sources/MUSIC_THEORY_SOURCE_OF_TRUTH.md`
 - **Implementation**: `MusicTheoryServiceImpl`
 - **Tools Powered**: `analyze_harmony`, `add_notes`
 
-#### 2. Professional Mixing Intelligence  
-- **Source**: `MIX_MASTERING_SOURCE_OF_TRUTH.md`
+#### 2. Professional Mixing Intelligence
+
+- **Source**: `docs/sources/MIX_MASTERING_SOURCE_OF_TRUTH.md`
 - **Implementation**: `MixingServiceImpl`
 - **Tools Powered**: `mix_analysis`
 
 #### 3. Genre-Specific Intelligence
-- **Source**: `GENRE_ANALYSIS_SOURCE_OF_TRUTH.md`
+
+- **Source**: `docs/sources/GENRE_ANALYSIS_SOURCE_OF_TRUTH.md`
 - **Implementation**: Genre classification algorithms
 - **Tools Powered**: `analyze_tempo`, `arrangement_suggestions`
 
 #### 4. Arrangement Intelligence
-- **Source**: `SONG_STRUCTURE_ARRANGEMENT_SOURCE_OF_TRUTH.md`
+
+- **Source**: `docs/sources/SONG_STRUCTURE_ARRANGEMENT_SOURCE_OF_TRUTH.md`
 - **Implementation**: `ArrangementServiceImpl`
 - **Tools Powered**: `arrangement_suggestions`
 
 #### 5. Tempo & Rhythm Intelligence
-- **Source**: `RHYTHMS_SOURCE_OF_TRUTH.md`
+
+- **Source**: `docs/sources/RHYTHMS_SOURCE_OF_TRUTH.md`
 - **Implementation**: `TempoAnalysisServiceImpl`
 - **Tools Powered**: `analyze_tempo`
 
@@ -400,10 +407,10 @@ class MixingServiceImpl:
 ### Adding New Musical Knowledge
 
 #### Step 1: Research and Document
-Add new knowledge to relevant markdown files:
+Add new knowledge to relevant markdown files in `docs/sources/`:
 
 ```markdown
-# Example: Adding new scale to MUSIC_THEORY_SOURCE_OF_TRUTH.md
+# Example: Adding new scale to docs/sources/MUSIC_THEORY_SOURCE_OF_TRUTH.md
 ## Exotic Scales
 
 ### Hungarian Minor Scale
@@ -451,7 +458,7 @@ class OrchestrationServiceImpl(OrchestrationService):
     """Orchestration intelligence from new markdown documentation."""
     
     INSTRUMENT_RANGES = {
-        # Extracted from new ORCHESTRATION_SOURCE_OF_TRUTH.md
+        # Extracted from new docs/sources/ORCHESTRATION_SOURCE_OF_TRUTH.md
         "violin": {"lowest": 55, "highest": 103},  # G3 to G7
         "cello": {"lowest": 36, "highest": 76},    # C2 to E5
     }

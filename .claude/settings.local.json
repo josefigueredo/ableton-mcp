@@ -9,7 +9,9 @@
       "mcp__ableton-live__get_song_info",
       "mcp__ableton-live__connect_ableton",
       "Bash(pytest:*)",
-      "mcp__ableton-live__add_notes"
+      "mcp__ableton-live__add_notes",
+      "mcp__ableton-live__get_clip_content",
+      "mcp__ableton-live__analyze_harmony"
     ],
     "deny": [],
     "ask": []
