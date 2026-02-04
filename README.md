@@ -4,6 +4,18 @@
 
 A sophisticated Model Context Protocol (MCP) server that transforms any AI assistant into an expert Ableton Live collaborator with deep music production knowledge and real-time DAW control.
 
+---
+
+## TL;DR
+
+**What is this?** An MCP server that lets AI assistants (like Claude) control Ableton Live and provide music production guidance in real-time.
+
+**Disclaimer:** This is a work-in-progress passion project built in my spare time, aided heavily by [Claude Code](https://claude.ai/code). I'm a Solutions Cloud Architect by trade, not a music producer - my musical knowledge is limited at best. I built this for the fun of creating a useful MCP tool and learning along the way. Expect rough edges!
+
+**Want to see what's possible?** Check out the [Showcase](docs/SHOWCASE.md) - a complete walkthrough creating a deep house track from scratch using this MCP server.
+
+---
+
 [![Tests](https://github.com/josefigueredo/ableton-mcp/actions/workflows/tests.yml/badge.svg)](https://github.com/josefigueredo/ableton-mcp/actions/workflows/tests.yml)
 [![Lint](https://github.com/josefigueredo/ableton-mcp/actions/workflows/lint.yml/badge.svg)](https://github.com/josefigueredo/ableton-mcp/actions/workflows/lint.yml)
 [![codecov](https://codecov.io/gh/josefigueredo/ableton-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/josefigueredo/ableton-mcp)
