@@ -379,7 +379,7 @@ class CompositeRateLimiter(RateLimiter):
 
         return RateLimitInfo(
             allowed=True,
-            remaining=float("inf"),
+            remaining=2**31 - 1,  # Max int32 as "unlimited"
             limit=0,
             reset_time=time.monotonic(),
         )

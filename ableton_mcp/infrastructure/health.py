@@ -161,17 +161,17 @@ class HealthCheckService:
             try:
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                for name, result in zip(self._checks.keys(), results, strict=False):
-                    if isinstance(result, Exception):
+                for name, check_result in zip(self._checks.keys(), results, strict=False):
+                    if isinstance(check_result, BaseException):
                         components.append(
                             ComponentHealth(
                                 name=name,
                                 status=HealthStatus.UNHEALTHY,
-                                message=str(result),
+                                message=str(check_result),
                             )
                         )
                     else:
-                        components.append(result)
+                        components.append(check_result)
             except Exception as e:
                 logger.error("Health check failed", error=str(e))
 
@@ -185,7 +185,7 @@ class HealthCheckService:
         else:
             overall_status = HealthStatus.HEALTHY
 
-        result = HealthCheckResult(
+        health_result = HealthCheckResult(
             status=overall_status,
             version=self._version,
             uptime_seconds=self.uptime_seconds,
@@ -193,10 +193,10 @@ class HealthCheckService:
         )
 
         # Cache result
-        self._cached_result = result
+        self._cached_result = health_result
         self._cache_time = time.monotonic()
 
-        return result
+        return health_result
 
     async def liveness_check(self) -> bool:
         """Check if the application is alive.
