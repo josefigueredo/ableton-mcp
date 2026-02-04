@@ -463,6 +463,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
+- **[Claude](https://claude.ai)** by Anthropic - AI co-creator and pair programming partner
+- **[GitHub Speckit](https://github.com/github/speckit)** - Spec-driven development helper
 - **Ableton Live** - Industry-leading DAW platform
 - **AbletonOSC** - OSC remote script enabling MCP integration
 - **Model Context Protocol** - Standardized AI assistant integration

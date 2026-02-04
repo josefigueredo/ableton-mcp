@@ -54,9 +54,33 @@ class TestTempoAnalysisServiceImpl:
         )
 
     async def test_detect_tempo(self, service: TempoAnalysisServiceImpl, sample_clip: Clip) -> None:
-        """Test tempo detection."""
+        """Test tempo detection from MIDI note patterns."""
         tempo = await service.detect_tempo(sample_clip)
-        assert tempo == 120.0  # Placeholder returns 120
+        # Now returns computed tempo based on IOI analysis
+        assert 60.0 <= tempo <= 200.0  # Valid BPM range
+
+    async def test_detect_tempo_empty_clip(self, service: TempoAnalysisServiceImpl) -> None:
+        """Test tempo detection falls back for empty clips."""
+        empty_clip = Clip(
+            id=EntityId("clip-empty"),
+            name="Empty Clip",
+            clip_type=ClipType.MIDI,
+            length=4.0,
+            notes=[],
+        )
+        tempo = await service.detect_tempo(empty_clip)
+        assert tempo == 120.0  # Default fallback
+
+    async def test_detect_tempo_audio_clip(self, service: TempoAnalysisServiceImpl) -> None:
+        """Test tempo detection for audio clip returns default."""
+        audio_clip = Clip(
+            id=EntityId("clip-audio"),
+            name="Audio Clip",
+            clip_type=ClipType.AUDIO,
+            length=4.0,
+        )
+        tempo = await service.detect_tempo(audio_clip)
+        assert tempo == 120.0  # Cannot analyze audio
 
     async def test_suggest_tempo_for_genre_house(self, service: TempoAnalysisServiceImpl) -> None:
         """Test tempo suggestion for house music."""
@@ -162,8 +186,41 @@ class TestArrangementServiceImpl:
         assert result.analysis_type == "song_structure"
         assert result.confidence > 0
         assert "sections" in result.data
-        assert "total_length" in result.data
+        assert "total_length_bars" in result.data or "analysis_note" in result.data
         assert isinstance(result.data["sections"], list)
+
+    async def test_analyze_song_structure_with_clips(
+        self, service: ArrangementServiceImpl
+    ) -> None:
+        """Test song structure analysis with clips containing data."""
+        clip = Clip(
+            id=EntityId("clip-1"),
+            name="Verse",
+            clip_type=ClipType.MIDI,
+            length=16.0,
+            notes=[
+                Note(pitch=60, start=0.0, duration=1.0, velocity=100),
+                Note(pitch=64, start=1.0, duration=1.0, velocity=90),
+            ],
+        )
+        track = Track(
+            id=EntityId("track-1"),
+            name="Lead",
+            track_type=TrackType.MIDI,
+            clips=[clip],
+        )
+        song = Song(
+            id=EntityId("song-1"),
+            name="Test Song",
+            tempo=120.0,
+            tracks=[track],
+        )
+
+        result = await service.analyze_song_structure(song)
+
+        assert result.confidence >= 0.5
+        assert "detected_keywords" in result.data
+        assert "verse" in result.data["detected_keywords"]
 
     async def test_suggest_arrangement_improvements_pop(
         self, service: ArrangementServiceImpl, sample_song: Song
@@ -219,15 +276,53 @@ class TestArrangementServiceImpl:
     async def test_calculate_energy_curve(
         self, service: ArrangementServiceImpl, sample_song: Song
     ) -> None:
-        """Test energy curve calculation."""
+        """Test energy curve calculation for empty song returns flat curve."""
         energy_points = await service.calculate_energy_curve(sample_song)
 
-        assert len(energy_points) == 32
+        # Empty song returns default flat curve
+        assert len(energy_points) >= 10
 
         for time_pos, energy in energy_points:
             assert isinstance(time_pos, float)
             assert isinstance(energy, float)
             assert 0.0 <= energy <= 1.0
+
+    async def test_calculate_energy_curve_with_notes(
+        self, service: ArrangementServiceImpl
+    ) -> None:
+        """Test energy curve reflects MIDI content."""
+        loud_clip = Clip(
+            id=EntityId("clip-loud"),
+            name="Loud Section",
+            clip_type=ClipType.MIDI,
+            length=4.0,
+            notes=[
+                Note(pitch=60, start=0.0, duration=0.5, velocity=127),
+                Note(pitch=64, start=0.5, duration=0.5, velocity=127),
+                Note(pitch=67, start=1.0, duration=0.5, velocity=127),
+                Note(pitch=72, start=1.5, duration=0.5, velocity=127),
+            ],
+        )
+        track = Track(
+            id=EntityId("track-1"),
+            name="Lead",
+            track_type=TrackType.MIDI,
+            volume=1.0,
+            clips=[loud_clip],
+        )
+        song = Song(
+            id=EntityId("song-1"),
+            name="Test",
+            tempo=120.0,
+            tracks=[track],
+        )
+
+        energy_points = await service.calculate_energy_curve(song)
+
+        # Should have energy data based on clips
+        assert len(energy_points) > 0
+        # At least one point should have non-zero energy
+        assert any(e[1] > 0 for e in energy_points)
 
     async def test_suggest_section_lengths_pop(self, service: ArrangementServiceImpl) -> None:
         """Test section length suggestions for pop."""
