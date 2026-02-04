@@ -10,7 +10,7 @@ This guide walks you through setting up the Ableton Live MCP Server with Claude 
 - **Claude Code** (latest version)
 - **Ableton Live** (any recent version - 10, 11, or 12)
 - **AbletonOSC Remote Script** - Essential for MCP communication
-- **Python 3.11+** with pip
+- **Docker** (recommended) OR **Python 3.11+** with pip
 
 ### Hardware Requirements
 - **4GB RAM** minimum (8GB recommended for complex projects)
@@ -45,11 +45,30 @@ This guide walks you through setting up the Ableton Live MCP Server with Claude 
 
 ## 🚀 Step 2: Install Ableton Live MCP Server
 
-### Clone and Setup
+Choose your preferred installation method. **Docker is recommended** for most users.
+
+### Option 1: Docker (Recommended)
+
+Docker provides the easiest setup with no Python configuration required.
+
+```bash
+# Pull the image (optional - Claude Code will pull automatically)
+docker pull ghcr.io/josefigueredo/ableton-mcp:latest
+
+# Verify the image works
+docker run --rm ghcr.io/josefigueredo/ableton-mcp:latest --help
+```
+
+That's it! Skip to Step 3 for Claude Code configuration.
+
+### Option 2: Python (For Development)
+
+Use this method if you want to modify the code or contribute to the project.
+
 ```bash
 # Clone the repository
-git clone <your-repository-url>
-cd ableton-live-mcp
+git clone https://github.com/josefigueredo/ableton-mcp.git
+cd ableton-mcp
 
 # Create virtual environment
 python -m venv venv
@@ -64,7 +83,7 @@ source venv/bin/activate
 pip install -e .
 ```
 
-### Verify Installation
+#### Verify Python Installation
 ```bash
 # Test the server installation (recommended method)
 python -m ableton_mcp.main
@@ -87,45 +106,93 @@ Starting MCP server...
 ## ⚙️ Step 3: Configure Claude Code
 
 ### Add MCP Server to Claude Code
+
 1. **Open Claude Code Settings**:
-   - Open Claude Code
-   - Access Settings/Preferences
+   - Run `claude mcp add` in your terminal, OR
+   - Open Claude Code and access Settings/Preferences
    - Navigate to MCP Servers section
 
-2. **Add the Ableton MCP Server**:
-   ```json
-   {
-     "mcpServers": {
-       "ableton-live": {
-         "command": "python",
-         "args": ["-m", "ableton_mcp.main"],
-         "cwd": "C:/Users/josef/Code/cursorforableton",
-         "env": {
-           "ABLETON_OSC_HOST": "127.0.0.1",
-           "ABLETON_OSC_SEND_PORT": "11000",
-           "ABLETON_OSC_RECEIVE_PORT": "11001"
-         }
-       }
-     }
-   }
-   ```
+2. **Choose your configuration based on installation method:**
 
-3. **Alternative Configuration** (if using virtual environment explicitly):
-   ```json
-   {
-     "mcpServers": {
-       "ableton-live": {
-         "command": "C:/Users/josef/Code/cursorforableton/venv/Scripts/python.exe",
-         "args": ["-m", "ableton_mcp.main"],
-         "cwd": "C:/Users/josef/Code/cursorforableton"
-       }
-     }
-   }
-   ```
+### Option 1: Docker Configuration (Recommended)
+
+The Docker configuration is simpler and works across all platforms.
+
+**For macOS / Windows:**
+```json
+{
+  "mcpServers": {
+    "ableton-live": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "ABLETON_OSC_HOST=host.docker.internal",
+        "-e", "ABLETON_OSC_SEND_PORT=11000",
+        "-e", "ABLETON_OSC_RECEIVE_PORT=11001",
+        "ghcr.io/josefigueredo/ableton-mcp:latest"
+      ]
+    }
+  }
+}
+```
+
+**For Linux (uses host networking):**
+```json
+{
+  "mcpServers": {
+    "ableton-live": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "--network", "host",
+        "-e", "ABLETON_OSC_HOST=127.0.0.1",
+        "-e", "ABLETON_OSC_SEND_PORT=11000",
+        "-e", "ABLETON_OSC_RECEIVE_PORT=11001",
+        "ghcr.io/josefigueredo/ableton-mcp:latest"
+      ]
+    }
+  }
+}
+```
+
+### Option 2: Python Configuration (Development)
+
+Use this if you installed via Python and want to run from source.
+
+```json
+{
+  "mcpServers": {
+    "ableton-mcp": {
+      "command": "python",
+      "args": ["-m", "ableton_mcp.main"],
+      "cwd": "/path/to/ableton-mcp",
+      "env": {
+        "ABLETON_OSC_HOST": "127.0.0.1",
+        "ABLETON_OSC_SEND_PORT": "11000",
+        "ABLETON_OSC_RECEIVE_PORT": "11001"
+      }
+    }
+  }
+}
+```
+
+**Windows with virtual environment:**
+```json
+{
+  "mcpServers": {
+    "ableton-mcp": {
+      "command": "C:/path/to/ableton-mcp/venv/Scripts/python.exe",
+      "args": ["-m", "ableton_mcp.main"],
+      "cwd": "C:/path/to/ableton-mcp"
+    }
+  }
+}
+```
 
 ### Restart Claude Code
 - Close and restart Claude Code to load the new MCP server
 - The server should appear in your available tools
+- Verify with `/mcp` command in Claude Code
 
 ## 🧪 Step 4: Testing the Integration
 
@@ -420,8 +487,23 @@ Check if OSC ports are working:
 # Check if ports are listening (Windows)
 netstat -an | findstr 11000
 
-# Check if ports are listening (macOS/Linux)  
+# Check if ports are listening (macOS/Linux)
 lsof -i :11000
+```
+
+### Docker Verification
+```bash
+# Check Docker is running
+docker info
+
+# Verify the image is available
+docker images | grep ableton-mcp
+
+# Test the container directly
+docker run --rm -it ghcr.io/josefigueredo/ableton-mcp:latest
+
+# Check host connectivity from Docker (macOS/Windows)
+docker run --rm alpine ping -c 3 host.docker.internal
 ```
 
 ## 🎯 Advanced Test Scenarios
@@ -471,14 +553,28 @@ Help me compose a pop song:
 3. Ensure ports 11000-11001 aren't blocked by firewall
 4. Restart both Ableton Live and Claude Code
 
+**Docker-specific:**
+- On macOS/Windows: Ensure `ABLETON_OSC_HOST=host.docker.internal` is set
+- On Linux: Use `--network host` flag
+- Verify Docker can reach the host: `docker run --rm alpine ping host.docker.internal`
+
 ### Issue 2: No Response from Tools
 **Symptoms:** Claude Code shows tools but they don't execute
 
 **Solutions:**
-1. Check MCP server is running: `ps aux | grep ableton_mcp`
-2. Verify Python environment and dependencies
-3. Check Claude Code MCP configuration
-4. Restart Claude Code to reload MCP server
+1. Check MCP server is running
+2. Check Claude Code MCP configuration
+3. Restart Claude Code to reload MCP server
+
+**Docker-specific:**
+- Verify Docker is running: `docker info`
+- Check image exists: `docker images | grep ableton-mcp`
+- Pull latest image: `docker pull ghcr.io/josefigueredo/ableton-mcp:latest`
+- Test container manually: `docker run --rm -it ghcr.io/josefigueredo/ableton-mcp:latest`
+
+**Python-specific:**
+- Verify virtual environment is activated
+- Check Python environment and dependencies: `pip list | grep ableton`
 
 ### Issue 3: OSC Communication Timeout
 **Error:** `❌ [OSC_COMMUNICATION_ERROR] OSC message timeout`
@@ -489,6 +585,11 @@ Help me compose a pop song:
 3. Restart AbletonOSC remote script
 4. Check network firewall settings
 
+**Docker-specific:**
+- Verify UDP ports are correctly mapped (not needed with `--network host`)
+- Check Docker Desktop settings allow host networking
+- Try running with `--network host` on Linux
+
 ### Issue 4: Notes Not Appearing
 **Symptoms:** MCP reports success but no MIDI notes in clips
 
@@ -497,6 +598,14 @@ Help me compose a pop song:
 2. Check clip length is sufficient for note placement
 3. Verify track is MIDI type (not audio)
 4. Check clip is selected/visible in Session View
+
+### Issue 5: Docker Image Not Found
+**Error:** `Unable to find image 'ghcr.io/josefigueredo/ableton-mcp:latest' locally`
+
+**Solutions:**
+1. Pull the image manually: `docker pull ghcr.io/josefigueredo/ableton-mcp:latest`
+2. Check internet connection
+3. Verify Docker is logged in to ghcr.io if image is private: `docker login ghcr.io`
 
 ## 🎼 Musical Workflow Examples
 

@@ -574,8 +574,15 @@ class AddNotesUseCase(UseCase):
                 if not ValidationService.validate_note_range(note):
                     raise ValidationError(f"Note {note.pitch} is out of range")
 
+            # Calculate clip length based on notes (end time of last note, rounded up to nearest bar)
+            max_end_time = max(note.start + note.duration for note in notes)
+            # Round up to nearest 4 beats (1 bar in 4/4)
+            clip_length = ((int(max_end_time) // 4) + 1) * 4
+
+            # Create the clip first (required before adding notes)
+            await self._clip_service.create_clip(request.track_id, request.clip_id, clip_length)
+
             # Add notes directly to Ableton via clip service
-            # This sends OSC commands directly without requiring local clip cache
             for note in notes:
                 await self._clip_service.add_note(request.track_id, request.clip_id, note)
 

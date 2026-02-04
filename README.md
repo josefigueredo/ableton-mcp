@@ -15,6 +15,7 @@ A sophisticated Model Context Protocol (MCP) server that transforms any AI assis
 ## 🚀 Features
 
 ### Core Ableton Live Integration
+
 - **Real-time OSC Communication** - Bidirectional control via AbletonOSC remote script
 - **Complete Transport Control** - Play, stop, record, and transport management
 - **Track Operations** - Volume, pan, mute, solo, arm, create, and delete tracks
@@ -22,6 +23,7 @@ A sophisticated Model Context Protocol (MCP) server that transforms any AI assis
 - **Clip Management** - Fire, stop, create clips with intelligent MIDI note addition
 
 ### AI-Powered Music Intelligence
+
 - **Harmonic Analysis** - Intelligent key detection and chord progression suggestions
 - **Music Theory Engine** - Scale filtering, note quantization, and melody harmonization
 - **Arrangement Intelligence** - Song structure analysis and improvement suggestions
@@ -29,6 +31,7 @@ A sophisticated Model Context Protocol (MCP) server that transforms any AI assis
 - **Tempo Optimization** - Genre-specific BPM suggestions and energy curve analysis
 
 ### Enterprise-Grade Architecture
+
 - **Clean Architecture** with clear separation of concerns
 - **SOLID Principles** implementation throughout
 - **Dependency Injection** using dependency-injector
@@ -40,11 +43,13 @@ A sophisticated Model Context Protocol (MCP) server that transforms any AI assis
 ## 📋 Prerequisites
 
 ### Required Software
+
 - **Ableton Live** (any recent version)
 - **AbletonOSC Remote Script** - [Download and Installation Guide](https://github.com/ideoforms/AbletonOSC)
 - **Python 3.11+** with pip
 
 ### System Requirements
+
 - **Memory**: 4GB RAM minimum, 8GB recommended
 - **Network**: Local network access for OSC communication
 - **Ports**: 11000-11001 available for OSC (configurable)
@@ -114,6 +119,7 @@ pip install -e ".[dev]"
 ### Starting the Server
 
 **Docker:**
+
 ```bash
 # Linux (uses host networking)
 docker run --network host ghcr.io/josefigueredo/ableton-mcp:latest
@@ -125,6 +131,7 @@ docker run -p 11000:11000/udp -p 11001:11001/udp \
 ```
 
 **Python:**
+
 ```bash
 # Start the MCP server
 ableton-mcp
@@ -134,9 +141,11 @@ python -m ableton_mcp.main
 ```
 
 ### MCP Integration
+
 The server provides these core tools:
 
 #### Connection Management
+
 ```python
 # Connect to Ableton Live
 await mcp_client.call_tool("connect_ableton", {
@@ -147,6 +156,7 @@ await mcp_client.call_tool("connect_ableton", {
 ```
 
 #### Transport Control
+
 ```python
 # Start playback
 await mcp_client.call_tool("transport_control", {
@@ -161,6 +171,7 @@ song_info = await mcp_client.call_tool("get_song_info", {
 ```
 
 #### Intelligent Music Creation
+
 ```python
 # Add notes with music theory assistance
 await mcp_client.call_tool("add_notes", {
@@ -206,6 +217,7 @@ This project implements **Clean Architecture** with clear layer separation:
 ```
 
 ### Key Design Patterns
+
 - **Repository Pattern** for data access abstraction
 - **Use Case Pattern** for business logic encapsulation
 - **Adapter Pattern** for external service integration
@@ -215,16 +227,19 @@ This project implements **Clean Architecture** with clear layer separation:
 ## 🧪 Testing
 
 ### Run All Tests
+
 ```bash
 pytest
 ```
 
 ### Run with Coverage
+
 ```bash
 pytest --cov=ableton_mcp --cov-report=html
 ```
 
 ### Run Specific Test Categories
+
 ```bash
 # Unit tests only
 pytest tests/unit/
@@ -237,11 +252,13 @@ pytest -m "not slow"
 ```
 
 ### Type Checking
+
 ```bash
 mypy ableton_mcp/
 ```
 
 ### Code Quality
+
 ```bash
 # Format code
 black ableton_mcp/ tests/
@@ -254,31 +271,32 @@ ruff ableton_mcp/ tests/
 
 ### Available Tools
 
-| Tool | Description | Key Parameters |
-|------|-------------|----------------|
-| `connect_ableton` | Connect to Ableton Live via OSC | `host`, `send_port`, `receive_port` |
-| `transport_control` | Control playback and transport | `action` (play/stop/record) |
-| `get_song_info` | Get comprehensive song information | `include_tracks`, `include_devices` |
-| `track_operations` | Track manipulation and control | `action`, `track_id`, `value` |
-| `add_notes` | Intelligent MIDI note addition | `track_id`, `clip_id`, `notes`, `quantize` |
-| `analyze_harmony` | Music theory and chord analysis | `notes`, `suggest_progressions`, `genre` |
-| `analyze_tempo` | Tempo optimization suggestions | `current_bpm`, `genre`, `energy_level` |
-| `mix_analysis` | Professional mixing guidance | `analyze_levels`, `target_lufs`, `platform` |
-| `arrangement_suggestions` | Song structure optimization | `song_length`, `genre`, `current_structure` |
+| Tool                      | Description                        | Key Parameters                              |
+| ------------------------- | ---------------------------------- | ------------------------------------------- |
+| `connect_ableton`         | Connect to Ableton Live via OSC    | `host`, `send_port`, `receive_port`         |
+| `transport_control`       | Control playback and transport     | `action` (play/stop/record)                 |
+| `get_song_info`           | Get comprehensive song information | `include_tracks`, `include_devices`         |
+| `track_operations`        | Track manipulation and control     | `action`, `track_id`, `value`               |
+| `add_notes`               | Intelligent MIDI note addition     | `track_id`, `clip_id`, `notes`, `quantize`  |
+| `analyze_harmony`         | Music theory and chord analysis    | `notes`, `suggest_progressions`, `genre`    |
+| `analyze_tempo`           | Tempo optimization suggestions     | `current_bpm`, `genre`, `energy_level`      |
+| `mix_analysis`            | Professional mixing guidance       | `analyze_levels`, `target_lufs`, `platform` |
+| `arrangement_suggestions` | Song structure optimization        | `song_length`, `genre`, `current_structure` |
 
 ### Error Codes
 
-| Code | Description | Resolution |
-|------|-------------|------------|
-| `CONNECTION_FAILED` | Cannot connect to Ableton Live | Check AbletonOSC installation and ports |
-| `TRACK_NOT_FOUND` | Invalid track ID | Verify track exists and ID is correct |
-| `CLIP_NOT_FOUND` | Invalid clip reference | Ensure clip slot has content |
-| `VALIDATION_ERROR` | Invalid parameter values | Check parameter ranges and types |
-| `OSC_COMMUNICATION_ERROR` | OSC message failed | Verify Ableton Live is running and responsive |
+| Code                      | Description                    | Resolution                                    |
+| ------------------------- | ------------------------------ | --------------------------------------------- |
+| `CONNECTION_FAILED`       | Cannot connect to Ableton Live | Check AbletonOSC installation and ports       |
+| `TRACK_NOT_FOUND`         | Invalid track ID               | Verify track exists and ID is correct         |
+| `CLIP_NOT_FOUND`          | Invalid clip reference         | Ensure clip slot has content                  |
+| `VALIDATION_ERROR`        | Invalid parameter values       | Check parameter ranges and types              |
+| `OSC_COMMUNICATION_ERROR` | OSC message failed             | Verify Ableton Live is running and responsive |
 
 ## 🔧 Configuration
 
 ### Environment Variables
+
 ```bash
 # OSC Configuration
 ABLETON_OSC_HOST=127.0.0.1
@@ -293,6 +311,7 @@ DEBUG=False
 ```
 
 ### Custom Configuration
+
 ```python
 from ableton_mcp.container import Container
 
@@ -348,12 +367,13 @@ docker run -d \
 ```
 
 **Using Docker Compose:**
+
 ```yaml
 # docker-compose.yml
 services:
   ableton-mcp:
     image: ghcr.io/josefigueredo/ableton-mcp:latest
-    network_mode: host  # Linux
+    network_mode: host # Linux
     # For macOS/Windows, use ports instead:
     # ports:
     #   - "11000:11000/udp"
@@ -388,6 +408,7 @@ WantedBy=multi-user.target
 ## 🤝 Contributing
 
 ### Development Setup
+
 ```bash
 # Install development dependencies
 pip install -e ".[dev]"
@@ -400,6 +421,7 @@ pytest && mypy ableton_mcp/
 ```
 
 ### Code Standards
+
 - **Black** for code formatting
 - **Ruff** for linting
 - **mypy** for type checking
@@ -407,6 +429,7 @@ pytest && mypy ableton_mcp/
 - **Conventional Commits** for commit messages
 
 ### Pull Request Process
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Write tests for your changes
@@ -420,24 +443,30 @@ pytest && mypy ableton_mcp/
 ### Common Issues
 
 **Connection Refused**
+
 ```bash
 Error: [CONNECTION_FAILED] Failed to connect to Ableton Live
 ```
+
 - Verify Ableton Live is running
 - Check AbletonOSC remote script is enabled
 - Ensure ports 11000-11001 are not blocked
 
 **Import Errors**
+
 ```bash
 ModuleNotFoundError: No module named 'ableton_mcp'
 ```
+
 - Install in development mode: `pip install -e .`
 - Verify virtual environment is activated
 
 **OSC Timeout**
+
 ```bash
 Error: [OSC_COMMUNICATION_ERROR] OSC message timeout
 ```
+
 - Check Ableton Live is responsive
 - Verify AbletonOSC script is properly loaded
 - Restart both applications
@@ -445,6 +474,7 @@ Error: [OSC_COMMUNICATION_ERROR] OSC message timeout
 ## 📖 Documentation
 
 ### Additional Resources
+
 - **[Clean Architecture Guide](docs/architecture.md)** - Detailed architecture explanation
 - **[Music Theory Integration](docs/music-theory.md)** - Music intelligence features
 - **[OSC Protocol Reference](docs/osc-protocol.md)** - Communication details
@@ -452,7 +482,9 @@ Error: [OSC_COMMUNICATION_ERROR] OSC message timeout
 - **[Contributing Guide](CONTRIBUTING.md)** - Development workflow
 
 ### API Documentation
+
 Generate API docs:
+
 ```bash
 sphinx-build -b html docs/ docs/_build/
 ```
@@ -474,12 +506,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🔮 Roadmap
 
 ### Version 1.1.0
+
 - [ ] Real-time audio analysis integration
 - [ ] Advanced arrangement intelligence
 - [ ] Hardware controller support
 - [ ] Cloud collaboration features
 
 ### Version 1.2.0
+
 - [ ] Machine learning model integration
 - [ ] Advanced mixing automation
 - [ ] Cross-DAW compatibility layer
