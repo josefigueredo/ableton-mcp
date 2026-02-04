@@ -13,10 +13,11 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      # Pinned to specific commit hashes for supply chain security
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.11"
 
@@ -29,12 +30,12 @@ jobs:
         run: python -m build
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b  # v2.5.0
         with:
           files: dist/*
           generate_release_notes: true
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@4bb033805d9e19112d8c697528791ff53f6c2f74  # v1.9.0
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}

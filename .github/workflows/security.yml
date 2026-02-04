@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Pinned to specific commit hash for supply chain security
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Set up Python
-        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.11"
 
@@ -41,18 +41,18 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@012739e5082ff0c22ca6d6ab32e07c36df03c4a4  # v3.22.12
+        uses: github/codeql-action/init@f116a11b3d2ec2f382b4a6530d51b8f4cf136fee  # v4.32.1
         with:
           languages: python
           queries: security-extended
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@012739e5082ff0c22ca6d6ab32e07c36df03c4a4  # v3.22.12
+        uses: github/codeql-action/autobuild@f116a11b3d2ec2f382b4a6530d51b8f4cf136fee  # v4.32.1
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@012739e5082ff0c22ca6d6ab32e07c36df03c4a4  # v3.22.12
+        uses: github/codeql-action/analyze@f116a11b3d2ec2f382b4a6530d51b8f4cf136fee  # v4.32.1
         with:
           category: "/language:python"
