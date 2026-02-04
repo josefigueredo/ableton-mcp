@@ -82,18 +82,18 @@ Connect to Ableton Live and show me the current session info.
 Connected successfully.
 
 **Song Information**
-| Property | Value |
-|----------|-------|
-| Name | Live Set |
-| Tempo | 120.0 BPM |
-| Time Signature | 4/4 |
-| Transport | Stopped |
+| Property       | Value     |
+|----------------|-----------|
+| Name           | Live Set  |
+| Tempo          | 120.0 BPM |
+| Time Signature | 4/4       |
+| Transport      | Stopped   |
 
 **Tracks (4)**
-| # | Name | Type |
-|---|------|------|
-| 0 | 1-MIDI | midi |
-| 1 | 2-MIDI | midi |
+| # | Name    | Type  |
+|---|---------|-------|
+| 0 | 1-MIDI  | midi  |
+| 1 | 2-MIDI  | midi  |
 | 2 | 3-Audio | audio |
 | 3 | 4-Audio | audio |
 
@@ -121,12 +121,12 @@ then set it up for me.
 ```plaintext
 **Deep House Tempo Analysis**
 
-| Characteristic | Value |
-|----------------|-------|
-| Current Tempo | 120 BPM |
-| Genre Range | 120-125 BPM |
-| Sweet Spot | 122-124 BPM |
-| Energy Level | Medium (groovy, laid-back) |
+| Characteristic | Value                      |
+|----------------|----------------------------|
+| Current Tempo  | 120 BPM                    |
+| Genre Range    | 120-125 BPM                |
+| Sweet Spot     | 122-124 BPM                |
+| Energy Level   | Medium (groovy, laid-back) |
 
 **Recommendation: 123 BPM**
 
@@ -138,12 +138,12 @@ energy for the dancefloor while maintaining that signature laid-back vibe.
 - Double-time feel: 246 BPM
 
 **Genre Context:**
-| Sub-genre | BPM Range | Feel |
-|-----------|-----------|------|
-| Deep House | 120-125 | Groovy, soulful |
-| Tech House | 124-128 | Driving, percussive |
-| Classic House | 118-122 | Warm, nostalgic |
-| Progressive | 122-126 | Building, melodic |
+| Sub-genre     | BPM Range | Feel                |
+|---------------|-----------|---------------------|
+| Deep House    | 120-125   | Groovy, soulful     |
+| Tech House    | 124-128   | Driving, percussive |
+| Classic House | 118-122   | Warm, nostalgic     |
+| Progressive   | 122-126   | Building, melodic   |
 ```
 
 ---
@@ -170,15 +170,15 @@ Set appropriate initial mix levels for club playback with proper gain staging.
 ```plaintext
 **7 Tracks Created with Professional Mix Levels**
 
-| # | Track | Volume | Pan | Purpose |
-|---|-------|--------|-----|---------|
-| 4 | Drums | 0 dB (ref) | Center | Drum Rack - 808/909 kit |
-| 5 | Bass | -3 dB | Center | Hardware-modeled bass (Modo Bass 2) |
-| 6 | Keys | -6 dB | -15% L | Piano/Rhodes (NI Noire) |
-| 7 | Lead Synth | -6 dB | +15% R | Lead melody synth |
-| 8 | Pads | -9 dB | Center | Atmospheric support |
-| 9 | FX/Risers | -12 dB | Center | Transitions and builds |
-| 10 | Vocals | -6 dB | Center | Placeholder for vocals |
+| #  | Track      | Volume     | Pan    | Purpose                             |
+|----|------------|------------|--------|-------------------------------------|
+| 4  | Drums      | 0 dB (ref) | Center | Drum Rack - 808/909 kit             |
+| 5  | Bass       | -3 dB      | Center | Hardware-modeled bass (Modo Bass 2) |
+| 6  | Keys       | -6 dB      | -15% L | Piano/Rhodes (NI Noire)             |
+| 7  | Lead Synth | -6 dB      | +15% R | Lead melody synth                   |
+| 8  | Pads       | -9 dB      | Center | Atmospheric support                 |
+| 9  | FX/Risers  | -12 dB     | Center | Transitions and builds              |
+| 10 | Vocals     | -6 dB      | Center | Placeholder for vocals              |
 
 **Gain Staging Philosophy:**
 - Drums are the reference level (0 dB)
@@ -214,11 +214,11 @@ Create a 4-bar MIDI clip on the Drums track for my beat.
 ```plaintext
 **4-bar MIDI clip created on Drums track (slot 0)**
 
-| Property | Value |
-|----------|-------|
-| Track | Drums (track 4) |
-| Clip Slot | 0 |
-| Status | Ready for MIDI notes |
+| Property  | Value                |
+|-----------|----------------------|
+| Track     | Drums (track 4)      |
+| Clip Slot | 0                    |
+| Status    | Ready for MIDI notes |
 
 The clip has a placeholder note to establish it.
 ```
@@ -243,12 +243,12 @@ velocity (127) for that punchy house sound.
 ```plaintext
 **Four-on-the-floor kick pattern added**
 
-| Property | Value |
-|----------|-------|
-| Note | C1 (MIDI 36) |
-| Pattern | Every quarter note |
-| Velocity | 127 (maximum punch) |
-| Duration | 0.25 beats (tight, punchy) |
+| Property    | Value                       |
+|-------------|-----------------------------|
+| Note        | C1 (MIDI 36)                |
+| Pattern     | Every quarter note          |
+| Velocity    | 127 (maximum punch)         |
+| Duration    | 0.25 beats (tight, punchy)  |
 | Total Notes | 16 kicks (4 bars × 4 beats) |
 
 Bar 1:  KICK  KICK  KICK  KICK
@@ -286,13 +286,13 @@ Make it feel like a driving but groovy deep house pattern.
 ```plaintext
 **Full house drum pattern created**
 
-| Element | Note | Position | Velocity | Count |
-|---------|------|----------|----------|-------|
-| Kick | C1 (36) | Every beat | 127 | 16 |
-| Open HH | A#1 (46) | Offbeats | 100 | 16 |
-| Closed HH | F#1 (42) | Downbeats | 80 | 16 |
-| Clap | D#1 (39) | Beats 2 & 4 | 110 | 8 |
-| Ghost Snare | D1 (38) | "e" & "a" of beat 4 | 50 | 8 |
+| Element     | Note     | Position            | Velocity | Count |
+|-------------|----------|---------------------|----------|-------|
+| Kick        | C1 (36)  | Every beat          | 127      | 16    |
+| Open HH     | A#1 (46) | Offbeats            | 100      | 16    |
+| Closed HH   | F#1 (42) | Downbeats           | 80       | 16    |
+| Clap        | D#1 (39) | Beats 2 & 4         | 110      | 8     |
+| Ghost Snare | D1 (38)  | "e" & "a" of beat 4 | 50       | 8     |
 
 **Total: 64 notes across 4 bars**
 
@@ -333,11 +333,11 @@ suggestions for that warm, analog feel.
 
 **Top Picks:**
 
-| Kit | Character | Best For |
-|-----|-----------|----------|
-| **808 Kit** | Warm, subby kick with long decay | Classic house, deep house |
-| **909 Kit** | Punchier attack, sizzling hats | Tech house, driving grooves |
-| **Hybrid Acoustic/Electronic** | Organic warmth with processing | Soulful house |
+| Kit                            | Character                        | Best For                    |
+|--------------------------------|----------------------------------|-----------------------------|
+| **808 Kit**                    | Warm, subby kick with long decay | Classic house, deep house   |
+| **909 Kit**                    | Punchier attack, sizzling hats   | Tech house, driving grooves |
+| **Hybrid Acoustic/Electronic** | Organic warmth with processing   | Soulful house               |
 
 **For Your Track - I Recommend:**
 
@@ -355,12 +355,12 @@ Ghost:    Acoustic brush (for organic feel)
 
 **Processing Tips for Deep House:**
 
-| Element | Processing |
-|---------|------------|
-| Kick | Subtle saturation for warmth, slight compression |
-| Clap | Short room reverb, 1-2ms delay for width |
-| Hi-hats | High-pass at 400Hz, sidechain to kick |
-| Ghost | Low-pass filter, lots of reverb |
+| Element | Processing                                       |
+|---------|--------------------------------------------------|
+| Kick    | Subtle saturation for warmth, slight compression |
+| Clap    | Short room reverb, 1-2ms delay for width         |
+| Hi-hats | High-pass at 400Hz, sidechain to kick            |
+| Ghost   | Low-pass filter, lots of reverb                  |
 ```
 
 ---
@@ -384,16 +384,16 @@ with a fingerstyle P-Bass tone for that warm, deep house feel.
 
 **Rhythmic Analysis:**
 
-| Beat | Drum Elements | Bass Opportunity |
-|------|---------------|------------------|
-| 1 | Kick + Closed HH | **ROOT** (lock with kick) |
-| 1& | Open HH | Rest or passing note |
-| 2 | Kick + Clap + Closed HH | Rest (let clap cut through) |
-| 2& | Open HH | Syncopation opportunity |
-| 3 | Kick + Closed HH | **OCTAVE/5th** (lift point) |
-| 3& | Open HH | Rest or approach note |
-| 4 | Kick + Clap + Closed HH | Movement zone |
-| 4e, 4a | Ghost snares | Bass can play through |
+| Beat   | Drum Elements           | Bass Opportunity            |
+|--------|-------------------------|-----------------------------|
+| 1      | Kick + Closed HH        | **ROOT** (lock with kick)   |
+| 1&     | Open HH                 | Rest or passing note        |
+| 2      | Kick + Clap + Closed HH | Rest (let clap cut through) |
+| 2&     | Open HH                 | Syncopation opportunity     |
+| 3      | Kick + Closed HH        | **OCTAVE/5th** (lift point) |
+| 3&     | Open HH                 | Rest or approach note       |
+| 4      | Kick + Clap + Closed HH | Movement zone               |
+| 4e, 4a | Ghost snares            | Bass can play through       |
 
 **Bass Pattern Recommendations:**
 
@@ -414,12 +414,12 @@ with a fingerstyle P-Bass tone for that warm, deep house feel.
 
 **Modo Bass 2 Settings for Deep House:**
 
-| Parameter | Suggested Value |
-|-----------|-----------------|
-| Bass Model | Precision Bass (P-Bass) |
-| Playing Style | Fingerstyle |
-| Pickup Blend | Favor neck pickup (warmer) |
-| Tone | Roll off ~30% (less highs) |
+| Parameter     | Suggested Value            |
+|---------------|----------------------------|
+| Bass Model    | Precision Bass (P-Bass)    |
+| Playing Style | Fingerstyle                |
+| Pickup Blend  | Favor neck pickup (warmer) |
+| Tone          | Roll off ~30% (less highs) |
 ```
 
 ![Bass Analysis](images/showcase/0005.png)
@@ -443,12 +443,12 @@ Keep the notes in the F1-F2 range for maximum sub impact.
 ```plaintext
 **Deep House Bass Line in F Minor Created**
 
-| Bar | Beat 1 | Beat 2 | Beat 3 | Beat 4 | Character |
-|-----|--------|--------|--------|--------|-----------|
-| 1 | F1 (root) | - | F2 (octave) | - | Foundation |
-| 2 | F1 | - | Ab1 (minor 3rd) | - | Color |
-| 3 | F1 | - | F2 -> Eb2 | - | Chromatic approach |
-| 4 | F1 (sustained) | - | C2 (5th) | Eb1 (walk) | Resolution setup |
+| Bar | Beat 1         | Beat 2 | Beat 3          | Beat 4     | Character          |
+|-----|----------------|--------|-----------------|------------|--------------------|
+| 1   | F1 (root)      | -      | F2 (octave)     | -          | Foundation         |
+| 2   | F1             | -      | Ab1 (minor 3rd) | -          | Color              |
+| 3   | F1             | -      | F2 -> Eb2       | -          | Chromatic approach |
+| 4   | F1 (sustained) | -      | C2 (5th)        | Eb1 (walk) | Resolution setup   |
 
 **Notes Added (10 total):**
 
@@ -486,24 +486,24 @@ timing adjustments for maximum groove.
 
 **Beat-by-Beat Alignment:**
 
-| Beat | Kick | Bass | Alignment | Quality |
-|------|------|------|-----------|---------|
-| 0 (Bar 1, Beat 1) | Yes | F1 (root) | LOCKED | Perfect |
-| 1 | Yes | - | Kick alone | Good (space) |
-| 2 | Yes | F2 (octave) | LOCKED | Perfect |
-| 3 | Yes + Ghost | - | Kick + fill | Good |
-| 4 (Bar 2, Beat 1) | Yes | F1 | LOCKED | Perfect |
-| ... | ... | ... | ... | ... |
+| Beat              | Kick        | Bass        | Alignment   | Quality      |
+|-------------------|-------------|-------------|-------------|--------------|
+| 0 (Bar 1, Beat 1) | Yes         | F1 (root)   | LOCKED      | Perfect      |
+| 1                 | Yes         | -           | Kick alone  | Good (space) |
+| 2                 | Yes         | F2 (octave) | LOCKED      | Perfect      |
+| 3                 | Yes + Ghost | -           | Kick + fill | Good         |
+| 4 (Bar 2, Beat 1) | Yes         | F1          | LOCKED      | Perfect      |
+| ...               | ...         | ...         | ...         | ...          |
 
 **Groove Assessment: 9/10**
 
-| Category | Rating | Notes |
-|----------|--------|-------|
-| Kick-Bass Lock | 5/5 | All beat 1s perfectly aligned |
-| Space & Breathing | 5/5 | Beat 2 rests let clap punch through |
-| Syncopation | 4/5 | Eb1 at 15.5 adds forward motion |
-| Dynamics | 4/5 | Velocity variation creates feel |
-| Resolution | 5/5 | Bar 4 walkdown signals loop reset |
+| Category          | Rating | Notes                               |
+|-------------------|--------|-------------------------------------|
+| Kick-Bass Lock    | 5/5    | All beat 1s perfectly aligned       |
+| Space & Breathing | 5/5    | Beat 2 rests let clap punch through |
+| Syncopation       | 4/5    | Eb1 at 15.5 adds forward motion     |
+| Dynamics          | 4/5    | Velocity variation creates feel     |
+| Resolution        | 5/5    | Bar 4 walkdown signals loop reset   |
 
 **Suggestions for Maximum Groove:**
 
@@ -539,12 +539,12 @@ why each one works.
 
 **Emotional Character:** Bittersweet, nostalgic, late-night vibes
 
-| Chord | Function | Feeling |
-|-------|----------|---------|
-| Fm | Home base | Establishes melancholy |
-| Ab | Relative major | Momentary brightness/hope |
-| Eb | Dominant region | Tension and lift |
-| Db | Subdominant | Gentle resolution back to Fm |
+| Chord | Function        | Feeling                      |
+|-------|-----------------|------------------------------|
+| Fm    | Home base       | Establishes melancholy       |
+| Ab    | Relative major  | Momentary brightness/hope    |
+| Eb    | Dominant region | Tension and lift             |
+| Db    | Subdominant     | Gentle resolution back to Fm |
 
 **Energy Level:** 4/5 (Driving but emotional)
 
@@ -555,12 +555,12 @@ why each one works.
 
 **Emotional Character:** Soulful, sophisticated, sunrise after a long night
 
-| Chord | Function | Feeling |
-|-------|----------|---------|
-| Fm7 | Tonic with 7th | Adds jazz sophistication |
-| Bbm7 | Minor iv | Deepens the melancholy |
-| Eb7 | Dominant | Strong pull creates anticipation |
-| Abmaj7 | Major III | Emotional peak, bittersweet resolution |
+| Chord  | Function       | Feeling                                |
+|--------|----------------|----------------------------------------|
+| Fm7    | Tonic with 7th | Adds jazz sophistication               |
+| Bbm7   | Minor iv       | Deepens the melancholy                 |
+| Eb7    | Dominant       | Strong pull creates anticipation       |
+| Abmaj7 | Major III      | Emotional peak, bittersweet resolution |
 
 **The Magic:** The Eb7 -> Abmaj7 is a V-I in Ab major (relative major),
 creating a moment of "false hope" before returning to Fm.
@@ -574,12 +574,12 @@ creating a moment of "false hope" before returning to Fm.
 
 **Emotional Character:** Deep, hypnotic, underground, mysterious
 
-| Chord | Function | Feeling |
-|-------|----------|---------|
-| Fm | Stable home | Grounding |
-| Fm/Eb | Bass descends | Forward motion without chord change |
-| Dbmaj7 | Major VI | Warm, hopeful moment |
-| Dbm | Borrowed minor vi | Unexpected darkness, twist |
+| Chord  | Function          | Feeling                             |
+|--------|-------------------|-------------------------------------|
+| Fm     | Stable home       | Grounding                           |
+| Fm/Eb  | Bass descends     | Forward motion without chord change |
+| Dbmaj7 | Major VI          | Warm, hopeful moment                |
+| Dbm    | Borrowed minor vi | Unexpected darkness, twist          |
 
 **Energy Level:** 3/5 (Hypnotic, for long builds and DJ sets)
 
@@ -610,12 +610,12 @@ as a 4-bar pattern. Use:
 
 **Progression: Fm7 - Bbm7 - Eb7 - Abmaj7** (repeats 2x in 4 bars)
 
-| Bar | Beat 1-2 | Beat 3-4 |
-|-----|----------|----------|
-| 1 | Fm7 | Bbm7 |
-| 2 | Eb7 | Abmaj7 |
-| 3 | Fm7 | Bbm7 |
-| 4 | Eb7 | Abmaj7 (+ shimmer) |
+| Bar | Beat 1-2 | Beat 3-4           |
+|-----|----------|--------------------|
+| 1   | Fm7      | Bbm7               |
+| 2   | Eb7      | Abmaj7             |
+| 3   | Fm7      | Bbm7               |
+| 4   | Eb7      | Abmaj7 (+ shimmer) |
 
 **Voice Leading (Minimal Movement):**
 
@@ -630,12 +630,12 @@ Bass:     F3     ->  F3     ->  Eb3    ->  Eb3     (common tones)
 
 **Voicings Used:**
 
-| Chord | Notes | MIDI | Character |
-|-------|-------|------|-----------|
-| Fm7 | F3, Ab3, C4, Eb4 | 41, 44, 48, 51 | Home, melancholic |
-| Bbm7 | F3, Ab3, Bb3, Db4 | 41, 44, 46, 49 | Deeper sadness |
-| Eb7 | Eb3, G3, Bb3, Db4 | 39, 43, 46, 49 | Tension, anticipation |
-| Abmaj7 | Eb3, Ab3, C4, Eb4 | 39, 44, 48, 51 | Release, hope |
+| Chord  | Notes             | MIDI           | Character             |
+|--------|-------------------|----------------|-----------------------|
+| Fm7    | F3, Ab3, C4, Eb4  | 41, 44, 48, 51 | Home, melancholic     |
+| Bbm7   | F3, Ab3, Bb3, Db4 | 41, 44, 46, 49 | Deeper sadness        |
+| Eb7    | Eb3, G3, Bb3, Db4 | 39, 43, 46, 49 | Tension, anticipation |
+| Abmaj7 | Eb3, Ab3, C4, Eb4 | 39, 44, 48, 51 | Release, hope         |
 
 **33 Notes Total:**
 - 8 chords x 4 notes = 32 notes
@@ -1513,39 +1513,6 @@ space while still connecting back to the main progression.
 I want this track to feel like a cross between Disclosure and Kerri
 Chandler. Based on those artists' styles, what elements should I add
 or adjust in my current arrangement?
-
-```
-
----
-
-## Image Directory Structure
-
-To complete this showcase, capture screenshots for each step:
-
-```plaintext
-
-docs/images/showcase/
-├── 01-connection.png
-├── 02-tempo-setup.png
-├── 03-track-creation.png
-├── 04-empty-drum-clip.png
-├── 05-kick-pattern.png
-├── 06-full-drums.png
-├── 07-drum-rack.png
-├── 08-bass-analysis.png
-├── 09-bass-line.png
-├── 10-bass-analysis.png
-├── 11-chord-suggestions.png
-├── 12-piano-voicings.png
-├── 13-ni-noire.png
-├── 14-lead-melody.png
-├── 15-harmony-analysis.png
-├── 16-pad-layer.png
-├── 17-mix-analysis.png
-├── 18-arrangement.png
-├── 19-energy-curve.png
-├── 20-playing.png
-└── 21-final-session.png
 
 ```
 
