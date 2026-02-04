@@ -5,13 +5,13 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field, validator
 
 
-class TransportState(str, Enum):
+class TransportState(StrEnum):
     """Transport playback states."""
 
     STOPPED = "stopped"
@@ -20,7 +20,7 @@ class TransportState(str, Enum):
     PAUSED = "paused"
 
 
-class TrackType(str, Enum):
+class TrackType(StrEnum):
     """Types of tracks in Ableton Live."""
 
     MIDI = "midi"
@@ -30,7 +30,7 @@ class TrackType(str, Enum):
     GROUP = "group"
 
 
-class DeviceType(str, Enum):
+class DeviceType(StrEnum):
     """Types of devices/plugins."""
 
     INSTRUMENT = "instrument"
@@ -38,7 +38,7 @@ class DeviceType(str, Enum):
     MIDI_EFFECT = "midi_effect"
 
 
-class ClipType(str, Enum):
+class ClipType(StrEnum):
     """Types of clips."""
 
     MIDI = "midi"

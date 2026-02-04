@@ -32,7 +32,7 @@ import signal
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 import structlog
@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class ShutdownPhase(str, Enum):
+class ShutdownPhase(StrEnum):
     """Phases of the shutdown process."""
 
     RUNNING = "running"

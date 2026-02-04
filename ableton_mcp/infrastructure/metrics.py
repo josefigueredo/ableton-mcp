@@ -18,7 +18,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 import structlog
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class MetricType(str, Enum):
+class MetricType(StrEnum):
     """Types of metrics."""
 
     COUNTER = "counter"
