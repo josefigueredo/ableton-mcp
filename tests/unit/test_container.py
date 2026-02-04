@@ -1,6 +1,5 @@
 """Unit tests for dependency injection container."""
 
-
 from ableton_mcp.container import Container
 
 

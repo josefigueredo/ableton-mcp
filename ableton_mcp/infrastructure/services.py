@@ -523,15 +523,17 @@ class ArrangementServiceImpl(ArrangementService):
                     sum(n.velocity for n in clip.notes) if clip.clip_type == ClipType.MIDI else 0
                 )
 
-                clip_data.append({
-                    "start": clip_start,
-                    "end": clip_end,
-                    "track": track.name,
-                    "clip_name": clip.name or "",
-                    "note_count": note_count,
-                    "total_velocity": total_velocity,
-                    "track_volume": track.volume,
-                })
+                clip_data.append(
+                    {
+                        "start": clip_start,
+                        "end": clip_end,
+                        "track": track.name,
+                        "clip_name": clip.name or "",
+                        "note_count": note_count,
+                        "total_velocity": total_velocity,
+                        "track_volume": track.volume,
+                    }
+                )
 
                 # Check clip name for section hints
                 if clip.name:
@@ -567,8 +569,7 @@ class ArrangementServiceImpl(ArrangementService):
 
             # Count active clips and notes in this section
             active_clips = [
-                c for c in clip_data
-                if c["start"] < section_end and c["end"] > section_start
+                c for c in clip_data if c["start"] < section_end and c["end"] > section_start
             ]
 
             density = len(active_clips) / max(1, len(song.tracks))
@@ -590,13 +591,17 @@ class ArrangementServiceImpl(ArrangementService):
             else:
                 section_name = "transition"
 
-            sections.append({
-                "bar": int(bar_num),
-                "type": section_name,
-                "density": round(density, 2),
-                "note_count": total_notes,
-                "energy": round(total_vel / max(1, total_notes * 127), 2) if total_notes > 0 else 0.0,
-            })
+            sections.append(
+                {
+                    "bar": int(bar_num),
+                    "type": section_name,
+                    "density": round(density, 2),
+                    "note_count": total_notes,
+                    "energy": (
+                        round(total_vel / max(1, total_notes * 127), 2) if total_notes > 0 else 0.0
+                    ),
+                }
+            )
             section_labels.append(section_name)
 
         # Calculate repetition factor
@@ -734,7 +739,9 @@ class ArrangementServiceImpl(ArrangementService):
 
             if count > 0:
                 avg_energy = total_energy / count
-                normalized = min(1.0, avg_energy / max_bucket_energy) if max_bucket_energy > 0 else 0.5
+                normalized = (
+                    min(1.0, avg_energy / max_bucket_energy) if max_bucket_energy > 0 else 0.5
+                )
             else:
                 normalized = 0.1  # Low energy for empty sections
 
@@ -859,54 +866,64 @@ class MixingServiceImpl(MixingService):
         # Check for bass conflicts
         bass_tracks = frequency_distribution["sub_bass"] + frequency_distribution["bass"]
         if len(bass_tracks) > 2:
-            issues.append({
-                "type": "frequency_conflict",
-                "range": "bass",
-                "tracks": bass_tracks,
-                "description": "Multiple bass elements may cause masking",
-            })
+            issues.append(
+                {
+                    "type": "frequency_conflict",
+                    "range": "bass",
+                    "tracks": bass_tracks,
+                    "description": "Multiple bass elements may cause masking",
+                }
+            )
             suggestions.append("Use sidechain compression between bass elements")
             suggestions.append("EQ carving: kick at 60Hz, bass at 80-100Hz")
 
         # Check for mid buildup
         mid_tracks = frequency_distribution["low_mid"] + frequency_distribution["mid"]
         if len(mid_tracks) > 4:
-            issues.append({
-                "type": "frequency_buildup",
-                "range": "mids",
-                "tracks": mid_tracks[:5],
-                "description": "Potential mid-frequency congestion",
-            })
+            issues.append(
+                {
+                    "type": "frequency_buildup",
+                    "range": "mids",
+                    "tracks": mid_tracks[:5],
+                    "description": "Potential mid-frequency congestion",
+                }
+            )
             suggestions.append("Cut 300-500Hz on non-bass instruments")
             suggestions.append("Use different EQ curves to create separation")
 
         # Check for missing high frequency content
         high_content = frequency_distribution["high"] + frequency_distribution["high_mid"]
         if not high_content:
-            issues.append({
-                "type": "frequency_gap",
-                "range": "highs",
-                "description": "Limited high-frequency content detected",
-            })
+            issues.append(
+                {
+                    "type": "frequency_gap",
+                    "range": "highs",
+                    "description": "Limited high-frequency content detected",
+                }
+            )
             suggestions.append("Add subtle high-shelf boost on master (10-12kHz)")
             suggestions.append("Consider adding air/brightness to lead elements")
 
         # Check for too many elements in one range
         for range_name, track_names in frequency_distribution.items():
             if range_name != "unknown" and len(track_names) > 3:
-                issues.append({
-                    "type": "crowded_range",
-                    "range": range_name,
-                    "count": len(track_names),
-                    "description": f"Many elements competing in {range_name} range",
-                })
+                issues.append(
+                    {
+                        "type": "crowded_range",
+                        "range": range_name,
+                        "count": len(track_names),
+                        "description": f"Many elements competing in {range_name} range",
+                    }
+                )
 
         # Generic mixing suggestions
-        suggestions.extend([
-            "High-pass filter non-bass instruments at 80-100Hz",
-            "Cut muddy frequencies around 300-400Hz on most tracks",
-            "Leave headroom on individual tracks for master processing",
-        ])
+        suggestions.extend(
+            [
+                "High-pass filter non-bass instruments at 80-100Hz",
+                "Cut muddy frequencies around 300-400Hz on most tracks",
+                "Leave headroom on individual tracks for master processing",
+            ]
+        )
 
         # Determine high frequency status
         if len(high_content) >= 2:
@@ -920,12 +937,8 @@ class MixingServiceImpl(MixingService):
             analysis_type="frequency_balance",
             confidence=0.6,  # Moderate confidence (heuristic-based)
             data={
-                "frequency_distribution": {
-                    k: v for k, v in frequency_distribution.items() if v
-                },
-                "track_count_by_range": {
-                    k: len(v) for k, v in frequency_distribution.items()
-                },
+                "frequency_distribution": {k: v for k, v in frequency_distribution.items() if v},
+                "track_count_by_range": {k: len(v) for k, v in frequency_distribution.items()},
                 "bass_heavy_tracks": bass_tracks,
                 "high_frequency_content": high_freq_status,
                 "potential_issues": issues,

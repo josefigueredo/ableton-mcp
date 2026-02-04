@@ -262,6 +262,7 @@ class TestAddNotesUseCase:
         music_theory_service = MusicTheoryServiceImpl()
         clip_service = Mock()
         clip_service.add_note = AsyncMock()
+        clip_service.create_clip = AsyncMock()
 
         # Setup song with track and clip
         song = Song(name="Test Song")
@@ -295,6 +296,7 @@ class TestAddNotesUseCase:
         music_theory_service = MusicTheoryServiceImpl()
         clip_service = Mock()
         clip_service.add_note = AsyncMock()
+        clip_service.create_clip = AsyncMock()
 
         # Setup song with track and clip
         song = Song(name="Test Song")

@@ -1,6 +1,5 @@
 """Unit tests for ValidationService."""
 
-
 from ableton_mcp.domain.entities import (
     Clip,
     ClipType,

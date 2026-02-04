@@ -189,9 +189,7 @@ class TestArrangementServiceImpl:
         assert "total_length_bars" in result.data or "analysis_note" in result.data
         assert isinstance(result.data["sections"], list)
 
-    async def test_analyze_song_structure_with_clips(
-        self, service: ArrangementServiceImpl
-    ) -> None:
+    async def test_analyze_song_structure_with_clips(self, service: ArrangementServiceImpl) -> None:
         """Test song structure analysis with clips containing data."""
         clip = Clip(
             id=EntityId("clip-1"),
@@ -287,9 +285,7 @@ class TestArrangementServiceImpl:
             assert isinstance(energy, float)
             assert 0.0 <= energy <= 1.0
 
-    async def test_calculate_energy_curve_with_notes(
-        self, service: ArrangementServiceImpl
-    ) -> None:
+    async def test_calculate_energy_curve_with_notes(self, service: ArrangementServiceImpl) -> None:
         """Test energy curve reflects MIDI content."""
         loud_clip = Clip(
             id=EntityId("clip-loud"),

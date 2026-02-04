@@ -7,7 +7,6 @@ NOTE: These tests are currently skipped due to API changes in the use cases.
 They need to be updated to match the current use case signatures and repository methods.
 """
 
-
 import pytest
 
 # Skip all tests in this module until fixtures are updated
