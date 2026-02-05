@@ -23,6 +23,11 @@ def mock_use_cases() -> dict:
         "arrangement_suggestions_use_case": Mock(),
         "clip_content_use_case": Mock(),
         "refresh_song_data_use_case": Mock(),
+        "scene_ops_use_case": Mock(),
+        "song_property_use_case": Mock(),
+        "clip_ops_use_case": Mock(),
+        "return_track_ops_use_case": Mock(),
+        "device_ops_use_case": Mock(),
     }
 
 
@@ -41,6 +46,11 @@ def mcp_server(mock_use_cases: dict) -> AbletonMCPServer:
         arrangement_suggestions_use_case=mock_use_cases["arrangement_suggestions_use_case"],
         clip_content_use_case=mock_use_cases["clip_content_use_case"],
         refresh_song_data_use_case=mock_use_cases["refresh_song_data_use_case"],
+        scene_ops_use_case=mock_use_cases["scene_ops_use_case"],
+        song_property_use_case=mock_use_cases["song_property_use_case"],
+        clip_ops_use_case=mock_use_cases["clip_ops_use_case"],
+        return_track_ops_use_case=mock_use_cases["return_track_ops_use_case"],
+        device_ops_use_case=mock_use_cases["device_ops_use_case"],
     )
 
 

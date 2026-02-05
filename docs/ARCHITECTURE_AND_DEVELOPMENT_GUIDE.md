@@ -341,10 +341,19 @@ classDiagram
         +connect(host, send_port, receive_port)
         +disconnect()
         +is_connected() bool
-        +start_playing()
-        +stop_playing()
-        +get_tempo() float
-        +get_clip_notes(track_id, clip_id) List
+        +test_connection() bool
+        +get_application_version() str
+        +start_playing() / stop_playing()
+        +undo() / redo()
+        +jump_by(beats) / jump_to(time)
+        +get_tempo() / set_tempo(bpm)
+        +get/set swing, metronome, loop, overdub
+        +track operations (volume, pan, mute, solo, arm, color, sends)
+        +scene operations (fire, name, color, create, delete)
+        +clip operations (fire, stop, name, length, loop points, notes)
+        +return/master track operations
+        +device operations (info, active, parameters)
+        +view/navigation (selected track, scene)
     }
 
     class AbletonOSCGateway {
@@ -996,10 +1005,15 @@ This is a Model Context Protocol (MCP) server that enables AI assistants to cont
 
 ## Current MCP Tools
 - `connect_ableton`: OSC connection
-- `transport_control`: Play/stop/record
-- `get_song_info`: Song metadata
-- `track_operations`: Track manipulation
-- `add_notes`: Add MIDI notes
+- `transport_control`: Play/stop/record, undo/redo, jump, cue navigation, session record, capture MIDI
+- `get_song_info`: Song metadata, tracks, devices, clips
+- `track_operations`: Volume, pan, mute, solo, arm, color, sends, create/delete/duplicate
+- `scene_operations`: Fire, create, delete, rename, recolor scenes
+- `clip_operations`: Get/set clip name, length, loop points, fire, stop, create, delete
+- `song_properties`: Set swing, metronome, overdub, loop, tempo
+- `return_track_operations`: Return track and master track volume, pan, mute, name
+- `device_operations`: Device info, toggle active, get/set individual parameters
+- `add_notes`: Add MIDI notes with quantization and scale filtering
 - `get_clip_content`: Read MIDI notes from clip
 - `analyze_harmony`: Key detection, chord suggestions
 - `analyze_tempo`: BPM analysis

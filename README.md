@@ -29,10 +29,13 @@ A sophisticated Model Context Protocol (MCP) server that transforms any AI assis
 ### Core Ableton Live Integration
 
 - **Real-time OSC Communication** - Bidirectional control via AbletonOSC remote script
-- **Complete Transport Control** - Play, stop, record, and transport management
-- **Track Operations** - Volume, pan, mute, solo, arm, create, and delete tracks
-- **Device & Plugin Control** - Parameter automation and preset management
-- **Clip Management** - Fire, stop, create clips with intelligent MIDI note addition
+- **Complete Transport Control** - Play, stop, record, undo/redo, jump, cue navigation, session record, capture MIDI
+- **Track Operations** - Volume, pan, mute, solo, arm, color, sends, create, delete, and duplicate tracks
+- **Scene Operations** - Fire, create, delete, rename, and recolor scenes
+- **Clip Management** - Fire, stop, create, delete clips with name, length, loop point control, and intelligent MIDI note addition
+- **Device & Plugin Control** - Parameter automation, device info, toggle active, per-parameter queries
+- **Return & Master Track Control** - Volume, pan, mute, name for return tracks and master track
+- **Song Properties** - Swing, metronome, overdub, loop control, tempo
 
 ### AI-Powered Music Intelligence
 
@@ -283,17 +286,22 @@ ruff ableton_mcp/ tests/
 
 ### Available Tools
 
-| Tool                      | Description                        | Key Parameters                              |
-| ------------------------- | ---------------------------------- | ------------------------------------------- |
-| `connect_ableton`         | Connect to Ableton Live via OSC    | `host`, `send_port`, `receive_port`         |
-| `transport_control`       | Control playback and transport     | `action` (play/stop/record)                 |
-| `get_song_info`           | Get comprehensive song information | `include_tracks`, `include_devices`         |
-| `track_operations`        | Track manipulation and control     | `action`, `track_id`, `value`               |
-| `add_notes`               | Intelligent MIDI note addition     | `track_id`, `clip_id`, `notes`, `quantize`  |
-| `analyze_harmony`         | Music theory and chord analysis    | `notes`, `suggest_progressions`, `genre`    |
-| `analyze_tempo`           | Tempo optimization suggestions     | `current_bpm`, `genre`, `energy_level`      |
-| `mix_analysis`            | Professional mixing guidance       | `analyze_levels`, `target_lufs`, `platform` |
-| `arrangement_suggestions` | Song structure optimization        | `song_length`, `genre`, `current_structure` |
+| Tool                      | Description                              | Key Parameters                              |
+| ------------------------- | ---------------------------------------- | ------------------------------------------- |
+| `connect_ableton`         | Connect to Ableton Live via OSC          | `host`, `send_port`, `receive_port`         |
+| `transport_control`       | Play, stop, record, undo, redo, jump, cue navigation | `action`, `value`                |
+| `get_song_info`           | Get comprehensive song information       | `include_tracks`, `include_devices`, `include_clips` |
+| `track_operations`        | Volume, pan, mute, solo, arm, color, sends, duplicate | `action`, `track_id`, `value`, `color`, `send_id` |
+| `scene_operations`        | Fire, create, delete, rename, recolor scenes | `action`, `scene_id`, `name`, `color`   |
+| `clip_operations`         | Get/set clip name, length, loop points, fire, stop | `action`, `track_id`, `clip_id`, `name`, `length` |
+| `song_properties`         | Set swing, metronome, overdub, loop, tempo | `action`, `value`                         |
+| `return_track_operations` | Return track and master track control    | `action`, `return_id`, `value`, `name`      |
+| `device_operations`       | Get device info, toggle, get/set parameters | `action`, `track_id`, `device_id`, `parameter_id` |
+| `add_notes`               | Intelligent MIDI note addition           | `track_id`, `clip_id`, `notes`, `quantize`  |
+| `analyze_harmony`         | Music theory and chord analysis          | `notes`, `suggest_progressions`, `genre`    |
+| `analyze_tempo`           | Tempo optimization suggestions           | `current_bpm`, `genre`, `energy_level`      |
+| `mix_analysis`            | Professional mixing guidance             | `analyze_levels`, `target_lufs`, `platform` |
+| `arrangement_suggestions` | Song structure optimization              | `song_length`, `genre`, `current_structure` |
 
 ### Error Codes
 

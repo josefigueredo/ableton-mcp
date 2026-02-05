@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Scene operations MCP tool (fire, create, delete, rename, recolor scenes)
+- Clip operations MCP tool (get/set name, length, loop start/end, fire, stop, create, delete, has_clip)
+- Song properties MCP tool (set swing, metronome, overdub, loop, loop start/length, tempo)
+- Return track operations MCP tool (create, get info, set volume/pan/mute/name for return tracks; get/set master volume/pan)
+- Device operations MCP tool (get device info, toggle active, get/set individual parameter value/name/display value/min/max)
+- Extended transport control with undo, redo, continue, stop all clips, tap tempo, capture MIDI, session record, jump by/to, next/prev cue
+- Extended track operations with color, sends, stop all clips, duplicate
+- Extended get_song_info with swing, metronome, overdub, loop, song length, record mode, session record, punch in/out, num return tracks
+- Connection verification via /live/test endpoint
+- Application version query
+- View/navigation support (get/set selected track and scene)
 - Track creation feature for MCP
 - Comprehensive test suite with 85%+ coverage
 - Open source documentation (LICENSE, CODE_OF_CONDUCT, SECURITY, CONTRIBUTING)
