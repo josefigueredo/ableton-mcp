@@ -241,7 +241,9 @@ class RefreshSongDataUseCase(UseCase):
 class TransportControlRequest:
     """Request for transport control operations."""
 
-    action: str  # play, stop, record, get_status
+    action: str  # play, stop, record, get_status, continue, stop_all_clips,
+    #   tap_tempo, undo, redo, capture_midi, session_record,
+    #   jump_by, jump_to, next_cue, prev_cue
     value: float | None = None
 
 
@@ -266,6 +268,68 @@ class TransportControlUseCase(UseCase):
             elif request.action == "record":
                 await self._transport_service.start_recording()
                 return UseCaseResult(success=True, message="Recording started")
+
+            elif request.action == "continue":
+                await self._transport_service.continue_playing()
+                return UseCaseResult(success=True, message="Playback continued")
+
+            elif request.action == "stop_all_clips":
+                await self._transport_service.stop_all_clips()
+                return UseCaseResult(success=True, message="All clips stopped")
+
+            elif request.action == "tap_tempo":
+                await self._transport_service.tap_tempo()
+                return UseCaseResult(success=True, message="Tap tempo registered")
+
+            elif request.action == "undo":
+                await self._transport_service.undo()
+                return UseCaseResult(success=True, message="Undo performed")
+
+            elif request.action == "redo":
+                await self._transport_service.redo()
+                return UseCaseResult(success=True, message="Redo performed")
+
+            elif request.action == "capture_midi":
+                await self._transport_service.capture_midi()
+                return UseCaseResult(success=True, message="MIDI captured")
+
+            elif request.action == "session_record":
+                await self._transport_service.trigger_session_record()
+                return UseCaseResult(success=True, message="Session record toggled")
+
+            elif request.action == "jump_by":
+                if request.value is None:
+                    return UseCaseResult(
+                        success=False,
+                        message="Value (beats) is required for jump_by",
+                        error_code="INVALID_PARAMETER",
+                    )
+                await self._transport_service.jump_by(request.value)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Jumped by {request.value} beats",
+                )
+
+            elif request.action == "jump_to":
+                if request.value is None:
+                    return UseCaseResult(
+                        success=False,
+                        message="Value (time) is required for jump_to",
+                        error_code="INVALID_PARAMETER",
+                    )
+                await self._transport_service.jump_to(request.value)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Jumped to position {request.value}",
+                )
+
+            elif request.action == "next_cue":
+                await self._transport_service.jump_to_next_cue()
+                return UseCaseResult(success=True, message="Jumped to next cue point")
+
+            elif request.action == "prev_cue":
+                await self._transport_service.jump_to_prev_cue()
+                return UseCaseResult(success=True, message="Jumped to previous cue point")
 
             elif request.action == "get_status":
                 song = await self._song_repository.get_current_song()
@@ -377,11 +441,14 @@ class GetSongInfoUseCase(UseCase):
 class TrackOperationRequest:
     """Request for track operations."""
 
-    action: str  # get_info, set_volume, set_pan, mute, solo, arm, create, delete
+    action: str  # get_info, set_volume, set_pan, mute, solo, arm, create, delete,
+    #   set_color, set_send, stop_all_clips, duplicate, select
     track_id: int | None = None
     value: float | None = None
     name: str | None = None
     track_type: str | None = None
+    color: int | None = None
+    send_id: int | None = None
 
 
 class TrackOperationsUseCase(UseCase):
@@ -485,6 +552,45 @@ class TrackOperationsUseCase(UseCase):
                     state = "armed" if track.is_armed else "disarmed"
 
                 return UseCaseResult(success=True, message=f"Track {state}")
+
+            elif request.action == "set_color":
+                if request.color is None:
+                    raise InvalidParameterError("Color value is required")
+                await self._track_service.set_track_color(request.track_id, request.color)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set track color to {request.color}",
+                )
+
+            elif request.action == "set_send":
+                if request.send_id is None or request.value is None:
+                    raise InvalidParameterError("send_id and value are required for set_send")
+                await self._track_service.set_track_send(
+                    request.track_id, request.send_id, request.value
+                )
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set track send {request.send_id} to {request.value:.2f}",
+                )
+
+            elif request.action == "stop_all_clips":
+                await self._track_service.stop_all_track_clips(request.track_id)
+                return UseCaseResult(success=True, message="Stopped all clips on track")
+
+            elif request.action == "duplicate":
+                await self._track_service.duplicate_track(request.track_id)
+                if self._refresh_use_case:
+                    await self._refresh_use_case.execute()
+                return UseCaseResult(success=True, message="Track duplicated")
+
+            elif request.action == "delete":
+                from ableton_mcp.adapters.service_adapters import AbletonTrackService
+
+                if isinstance(self._track_service, AbletonTrackService):
+                    await self._track_service._gateway.delete_track(request.track_id)
+                if self._refresh_use_case:
+                    await self._refresh_use_case.execute()
+                return UseCaseResult(success=True, message="Track deleted")
 
             else:
                 return UseCaseResult(
@@ -933,6 +1039,563 @@ class GetClipContentUseCase(UseCase):
                 success=False,
                 message=f"Error getting clip content: {e!s}",
                 error_code="CLIP_CONTENT_ERROR",
+            )
+
+
+@dataclass
+class SceneOperationRequest:
+    """Request for scene operations."""
+
+    action: str  # fire, get_info, create, delete, set_name, set_color, select
+    scene_id: int | None = None
+    name: str | None = None
+    color: int | None = None
+    index: int | None = None
+
+
+class SceneOperationsUseCase(UseCase):
+    """Use case for scene operations."""
+
+    def __init__(self, scene_service: Any, song_repository: SongRepository) -> None:
+        self._scene_service = scene_service
+        self._song_repository = song_repository
+        self._logger = structlog.get_logger(__name__)
+
+    async def execute(self, request: SceneOperationRequest) -> UseCaseResult:
+        """Execute scene operation."""
+        try:
+            if request.action == "fire":
+                if request.scene_id is None:
+                    raise InvalidParameterError("scene_id is required")
+                await self._scene_service.fire_scene(request.scene_id)
+                return UseCaseResult(success=True, message=f"Fired scene {request.scene_id}")
+
+            elif request.action == "get_info":
+                if request.scene_id is None:
+                    raise InvalidParameterError("scene_id is required")
+                info = await self._scene_service.get_scene_info(request.scene_id)
+                return UseCaseResult(success=True, data=info)
+
+            elif request.action == "create":
+                index = request.index if request.index is not None else -1
+                await self._scene_service.create_scene(index)
+                return UseCaseResult(success=True, message=f"Created scene at index {index}")
+
+            elif request.action == "delete":
+                if request.scene_id is None:
+                    raise InvalidParameterError("scene_id is required")
+                await self._scene_service.delete_scene(request.scene_id)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Deleted scene {request.scene_id}",
+                )
+
+            elif request.action == "set_name":
+                if request.scene_id is None or request.name is None:
+                    raise InvalidParameterError("scene_id and name are required")
+                await self._scene_service.set_scene_name(request.scene_id, request.name)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set scene name to '{request.name}'",
+                )
+
+            elif request.action == "set_color":
+                if request.scene_id is None or request.color is None:
+                    raise InvalidParameterError("scene_id and color are required")
+                await self._scene_service.set_scene_color(request.scene_id, request.color)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set scene color to {request.color}",
+                )
+
+            else:
+                return UseCaseResult(
+                    success=False,
+                    message=f"Unknown scene action: {request.action}",
+                    error_code="INVALID_ACTION",
+                )
+
+        except InvalidParameterError as e:
+            return UseCaseResult(success=False, message=str(e), error_code=e.error_code)
+        except Exception as e:
+            self._logger.error("Scene operation error", error=str(e))
+            return UseCaseResult(
+                success=False,
+                message=f"Scene operation error: {e!s}",
+                error_code="SCENE_ERROR",
+            )
+
+
+@dataclass
+class SongPropertyRequest:
+    """Request for song property operations."""
+
+    action: str  # set_swing, set_metronome, set_overdub, set_loop,
+    #   set_loop_start, set_loop_length, set_tempo, get_properties
+    value: float | None = None
+    enabled: bool | None = None
+
+
+class SongPropertyUseCase(UseCase):
+    """Use case for setting song-level properties."""
+
+    def __init__(self, song_property_service: Any) -> None:
+        self._service = song_property_service
+        self._logger = structlog.get_logger(__name__)
+
+    async def execute(self, request: SongPropertyRequest) -> UseCaseResult:
+        """Execute song property operation."""
+        try:
+            if request.action == "get_properties":
+                props = await self._service.get_song_properties()
+                return UseCaseResult(success=True, data=props)
+
+            elif request.action == "set_swing":
+                if request.value is None:
+                    raise InvalidParameterError("value is required for set_swing")
+                await self._service.set_swing(request.value)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set swing to {request.value}",
+                )
+
+            elif request.action == "set_metronome":
+                if request.enabled is None:
+                    raise InvalidParameterError("enabled is required for set_metronome")
+                await self._service.set_metronome(request.enabled)
+                state = "enabled" if request.enabled else "disabled"
+                return UseCaseResult(success=True, message=f"Metronome {state}")
+
+            elif request.action == "set_overdub":
+                if request.enabled is None:
+                    raise InvalidParameterError("enabled is required for set_overdub")
+                await self._service.set_overdub(request.enabled)
+                state = "enabled" if request.enabled else "disabled"
+                return UseCaseResult(success=True, message=f"Overdub {state}")
+
+            elif request.action == "set_loop":
+                if request.enabled is None:
+                    raise InvalidParameterError("enabled is required for set_loop")
+                await self._service.set_loop(request.enabled)
+                state = "enabled" if request.enabled else "disabled"
+                return UseCaseResult(success=True, message=f"Loop {state}")
+
+            elif request.action == "set_loop_start":
+                if request.value is None:
+                    raise InvalidParameterError("value is required for set_loop_start")
+                await self._service.set_loop_start(request.value)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set loop start to {request.value}",
+                )
+
+            elif request.action == "set_loop_length":
+                if request.value is None:
+                    raise InvalidParameterError("value is required for set_loop_length")
+                await self._service.set_loop_length(request.value)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set loop length to {request.value}",
+                )
+
+            elif request.action == "set_tempo":
+                if request.value is None:
+                    raise InvalidParameterError("value is required for set_tempo")
+                await self._service.set_tempo(request.value)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set tempo to {request.value} BPM",
+                )
+
+            else:
+                return UseCaseResult(
+                    success=False,
+                    message=f"Unknown song property action: {request.action}",
+                    error_code="INVALID_ACTION",
+                )
+
+        except InvalidParameterError as e:
+            return UseCaseResult(success=False, message=str(e), error_code=e.error_code)
+        except Exception as e:
+            self._logger.error("Song property error", error=str(e))
+            return UseCaseResult(
+                success=False,
+                message=f"Song property error: {e!s}",
+                error_code="SONG_PROPERTY_ERROR",
+            )
+
+
+@dataclass
+class ClipOperationRequest:
+    """Request for clip operations."""
+
+    action: str  # get_info, set_name, set_length, set_loop_start, set_loop_end,
+    #   fire, stop, create, delete, has_clip
+    track_id: int
+    clip_id: int
+    name: str | None = None
+    length: float | None = None
+    value: float | None = None
+
+
+class ClipOperationsUseCase(UseCase):
+    """Use case for clip operations beyond note manipulation."""
+
+    def __init__(
+        self,
+        clip_service: Any,
+        song_repository: SongRepository,
+    ) -> None:
+        self._clip_service = clip_service
+        self._song_repository = song_repository
+        self._logger = structlog.get_logger(__name__)
+
+    async def execute(self, request: ClipOperationRequest) -> UseCaseResult:
+        """Execute clip operation."""
+        try:
+            song = await self._song_repository.get_current_song()
+            if not song:
+                return UseCaseResult(success=False, message="No active song")
+
+            track = song.get_track_by_index(request.track_id)
+            if not track:
+                raise TrackNotFoundError(f"Track {request.track_id} not found")
+
+            if request.action == "has_clip":
+                result = await self._clip_service.has_clip(request.track_id, request.clip_id)
+                return UseCaseResult(
+                    success=True,
+                    data={"has_clip": result},
+                    message=f"Clip slot {'has' if result else 'does not have'} a clip",
+                )
+
+            elif request.action == "get_info":
+                has = await self._clip_service.has_clip(request.track_id, request.clip_id)
+                if not has:
+                    raise ClipNotFoundError(
+                        f"No clip in slot {request.clip_id} on track {request.track_id}"
+                    )
+                name = await self._clip_service.get_clip_name(request.track_id, request.clip_id)
+                length = await self._clip_service.get_clip_length(request.track_id, request.clip_id)
+                loop_start = await self._clip_service.get_clip_loop_start(
+                    request.track_id, request.clip_id
+                )
+                loop_end = await self._clip_service.get_clip_loop_end(
+                    request.track_id, request.clip_id
+                )
+                is_playing = await self._clip_service.get_clip_is_playing(
+                    request.track_id, request.clip_id
+                )
+                return UseCaseResult(
+                    success=True,
+                    data={
+                        "track_id": request.track_id,
+                        "clip_id": request.clip_id,
+                        "name": name,
+                        "length": length,
+                        "loop_start": loop_start,
+                        "loop_end": loop_end,
+                        "is_playing": is_playing,
+                    },
+                )
+
+            elif request.action == "set_name":
+                if request.name is None:
+                    raise InvalidParameterError("name is required for set_name")
+                await self._clip_service.set_clip_name(
+                    request.track_id, request.clip_id, request.name
+                )
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set clip name to '{request.name}'",
+                )
+
+            elif request.action == "set_length":
+                if request.length is None:
+                    raise InvalidParameterError("length is required for set_length")
+                await self._clip_service.set_clip_length(
+                    request.track_id, request.clip_id, request.length
+                )
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set clip length to {request.length}",
+                )
+
+            elif request.action == "set_loop_start":
+                if request.value is None:
+                    raise InvalidParameterError("value is required for set_loop_start")
+                await self._clip_service.set_clip_loop_start(
+                    request.track_id, request.clip_id, request.value
+                )
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set clip loop start to {request.value}",
+                )
+
+            elif request.action == "set_loop_end":
+                if request.value is None:
+                    raise InvalidParameterError("value is required for set_loop_end")
+                await self._clip_service.set_clip_loop_end(
+                    request.track_id, request.clip_id, request.value
+                )
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set clip loop end to {request.value}",
+                )
+
+            elif request.action == "fire":
+                await self._clip_service.fire_clip(request.track_id, request.clip_id)
+                return UseCaseResult(success=True, message="Clip fired")
+
+            elif request.action == "stop":
+                await self._clip_service.stop_clip(request.track_id, request.clip_id)
+                return UseCaseResult(success=True, message="Clip stopped")
+
+            elif request.action == "create":
+                clip_length = request.length or 4.0
+                await self._clip_service.create_clip(request.track_id, request.clip_id, clip_length)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Created clip with length {clip_length}",
+                )
+
+            elif request.action == "delete":
+                await self._clip_service.delete_clip(request.track_id, request.clip_id)
+                return UseCaseResult(success=True, message="Clip deleted")
+
+            else:
+                return UseCaseResult(
+                    success=False,
+                    message=f"Unknown clip action: {request.action}",
+                    error_code="INVALID_ACTION",
+                )
+
+        except (TrackNotFoundError, ClipNotFoundError, InvalidParameterError) as e:
+            return UseCaseResult(success=False, message=str(e), error_code=e.error_code)
+        except Exception as e:
+            self._logger.error("Clip operation error", error=str(e))
+            return UseCaseResult(
+                success=False,
+                message=f"Clip operation error: {e!s}",
+                error_code="CLIP_ERROR",
+            )
+
+
+@dataclass
+class ReturnTrackOperationRequest:
+    """Request for return track operations."""
+
+    action: str  # get_info, set_volume, set_pan, mute, set_name, create,
+    #   get_master_info, set_master_volume, set_master_pan
+    return_id: int | None = None
+    value: float | None = None
+    name: str | None = None
+
+
+class ReturnTrackOperationsUseCase(UseCase):
+    """Use case for return track and master track operations."""
+
+    def __init__(
+        self,
+        return_track_service: Any,
+        song_repository: SongRepository,
+    ) -> None:
+        self._service = return_track_service
+        self._song_repository = song_repository
+        self._logger = structlog.get_logger(__name__)
+
+    async def execute(self, request: ReturnTrackOperationRequest) -> UseCaseResult:
+        """Execute return/master track operation."""
+        try:
+            if request.action == "create":
+                await self._service.create_return_track()
+                return UseCaseResult(success=True, message="Created return track")
+
+            elif request.action == "get_info":
+                if request.return_id is None:
+                    raise InvalidParameterError("return_id is required for get_info")
+                info = await self._service.get_return_track_info(request.return_id)
+                return UseCaseResult(success=True, data=info)
+
+            elif request.action == "set_volume":
+                if request.return_id is None or request.value is None:
+                    raise InvalidParameterError("return_id and value are required")
+                await self._service.set_return_track_volume(request.return_id, request.value)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set return track volume to {request.value:.2f}",
+                )
+
+            elif request.action == "set_pan":
+                if request.return_id is None or request.value is None:
+                    raise InvalidParameterError("return_id and value are required")
+                await self._service.set_return_track_pan(request.return_id, request.value)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set return track pan to {request.value:.2f}",
+                )
+
+            elif request.action == "mute":
+                if request.return_id is None:
+                    raise InvalidParameterError("return_id is required for mute")
+                # Toggle - get current then flip
+                info = await self._service.get_return_track_info(request.return_id)
+                new_state = not info["muted"]
+                await self._service.set_return_track_mute(request.return_id, new_state)
+                state = "muted" if new_state else "unmuted"
+                return UseCaseResult(success=True, message=f"Return track {state}")
+
+            elif request.action == "set_name":
+                if request.return_id is None or request.name is None:
+                    raise InvalidParameterError("return_id and name are required")
+                await self._service.set_return_track_name(request.return_id, request.name)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set return track name to '{request.name}'",
+                )
+
+            elif request.action == "get_master_info":
+                info = await self._service.get_master_info()
+                return UseCaseResult(success=True, data=info)
+
+            elif request.action == "set_master_volume":
+                if request.value is None:
+                    raise InvalidParameterError("value is required for set_master_volume")
+                await self._service.set_master_volume(request.value)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set master volume to {request.value:.2f}",
+                )
+
+            elif request.action == "set_master_pan":
+                if request.value is None:
+                    raise InvalidParameterError("value is required for set_master_pan")
+                await self._service.set_master_pan(request.value)
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set master pan to {request.value:.2f}",
+                )
+
+            else:
+                return UseCaseResult(
+                    success=False,
+                    message=f"Unknown return track action: {request.action}",
+                    error_code="INVALID_ACTION",
+                )
+
+        except InvalidParameterError as e:
+            return UseCaseResult(success=False, message=str(e), error_code=e.error_code)
+        except Exception as e:
+            self._logger.error("Return track operation error", error=str(e))
+            return UseCaseResult(
+                success=False,
+                message=f"Return track operation error: {e!s}",
+                error_code="RETURN_TRACK_ERROR",
+            )
+
+
+@dataclass
+class DeviceOperationRequest:
+    """Request for device operations."""
+
+    action: str  # get_info, set_active, get_parameter, set_parameter, list_parameters
+    track_id: int
+    device_id: int
+    parameter_id: int | None = None
+    value: float | None = None
+    active: bool | None = None
+
+
+class DeviceOperationsUseCase(UseCase):
+    """Use case for device operations."""
+
+    def __init__(
+        self,
+        device_service: Any,
+        song_repository: SongRepository,
+    ) -> None:
+        self._device_service = device_service
+        self._song_repository = song_repository
+        self._logger = structlog.get_logger(__name__)
+
+    async def execute(self, request: DeviceOperationRequest) -> UseCaseResult:
+        """Execute device operation."""
+        try:
+            song = await self._song_repository.get_current_song()
+            if not song:
+                return UseCaseResult(success=False, message="No active song")
+
+            track = song.get_track_by_index(request.track_id)
+            if not track:
+                raise TrackNotFoundError(f"Track {request.track_id} not found")
+
+            if request.action == "get_info":
+                info = await self._device_service.get_device_info(
+                    request.track_id, request.device_id
+                )
+                return UseCaseResult(success=True, data=info)
+
+            elif request.action == "set_active":
+                if request.active is None:
+                    raise InvalidParameterError("active is required for set_active")
+                await self._device_service.set_device_active(
+                    request.track_id, request.device_id, request.active
+                )
+                state = "activated" if request.active else "deactivated"
+                return UseCaseResult(success=True, message=f"Device {state}")
+
+            elif request.action == "get_parameter":
+                if request.parameter_id is None:
+                    raise InvalidParameterError("parameter_id is required for get_parameter")
+                info = await self._device_service.get_parameter_info(
+                    request.track_id,
+                    request.device_id,
+                    request.parameter_id,
+                )
+                return UseCaseResult(success=True, data=info)
+
+            elif request.action == "set_parameter":
+                if request.parameter_id is None or request.value is None:
+                    raise InvalidParameterError("parameter_id and value are required")
+                await self._device_service.set_parameter_value(
+                    request.track_id,
+                    request.device_id,
+                    request.parameter_id,
+                    request.value,
+                )
+                return UseCaseResult(
+                    success=True,
+                    message=f"Set parameter {request.parameter_id} to {request.value}",
+                )
+
+            elif request.action == "list_parameters":
+                params = await self._device_service.get_all_parameters(
+                    request.track_id, request.device_id
+                )
+                return UseCaseResult(
+                    success=True,
+                    data={
+                        "track_id": request.track_id,
+                        "device_id": request.device_id,
+                        "parameters": params,
+                    },
+                )
+
+            else:
+                return UseCaseResult(
+                    success=False,
+                    message=f"Unknown device action: {request.action}",
+                    error_code="INVALID_ACTION",
+                )
+
+        except (TrackNotFoundError, InvalidParameterError) as e:
+            return UseCaseResult(success=False, message=str(e), error_code=e.error_code)
+        except Exception as e:
+            self._logger.error("Device operation error", error=str(e))
+            return UseCaseResult(
+                success=False,
+                message=f"Device operation error: {e!s}",
+                error_code="DEVICE_ERROR",
             )
 
 

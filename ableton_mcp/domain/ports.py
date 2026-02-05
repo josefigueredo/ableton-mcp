@@ -288,3 +288,448 @@ class AbletonGateway(ABC):
     async def bypass_device(self, track_id: int, device_id: int, bypass: bool) -> None:
         """Bypass or enable a device."""
         ...
+
+    # Connection verification & View/Navigation
+
+    @abstractmethod
+    async def test_connection(self) -> bool:
+        """Test connection to Ableton Live."""
+        ...
+
+    @abstractmethod
+    async def get_application_version(self) -> str:
+        """Get Ableton Live application version."""
+        ...
+
+    @abstractmethod
+    async def get_selected_track(self) -> int:
+        """Get currently selected track index."""
+        ...
+
+    @abstractmethod
+    async def set_selected_track(self, track_id: int) -> None:
+        """Set selected track by index."""
+        ...
+
+    @abstractmethod
+    async def get_selected_scene(self) -> int:
+        """Get currently selected scene index."""
+        ...
+
+    @abstractmethod
+    async def set_selected_scene(self, scene_id: int) -> None:
+        """Set selected scene by index."""
+        ...
+
+    # Scene operations
+
+    @abstractmethod
+    async def get_num_scenes(self) -> int:
+        """Get total number of scenes."""
+        ...
+
+    @abstractmethod
+    async def fire_scene(self, scene_id: int) -> None:
+        """Fire (launch) a scene."""
+        ...
+
+    @abstractmethod
+    async def get_scene_name(self, scene_id: int) -> str:
+        """Get scene name."""
+        ...
+
+    @abstractmethod
+    async def set_scene_name(self, scene_id: int, name: str) -> None:
+        """Set scene name."""
+        ...
+
+    @abstractmethod
+    async def get_scene_color(self, scene_id: int) -> int:
+        """Get scene color index."""
+        ...
+
+    @abstractmethod
+    async def set_scene_color(self, scene_id: int, color: int) -> None:
+        """Set scene color index."""
+        ...
+
+    @abstractmethod
+    async def create_scene(self, index: int) -> None:
+        """Create a new scene at the given index."""
+        ...
+
+    @abstractmethod
+    async def delete_scene(self, scene_id: int) -> None:
+        """Delete a scene."""
+        ...
+
+    # Extended transport controls
+
+    @abstractmethod
+    async def continue_playing(self) -> None:
+        """Continue playback from current position."""
+        ...
+
+    @abstractmethod
+    async def stop_all_clips(self) -> None:
+        """Stop all playing clips."""
+        ...
+
+    @abstractmethod
+    async def tap_tempo(self) -> None:
+        """Tap tempo."""
+        ...
+
+    @abstractmethod
+    async def undo(self) -> None:
+        """Undo last action."""
+        ...
+
+    @abstractmethod
+    async def redo(self) -> None:
+        """Redo last undone action."""
+        ...
+
+    @abstractmethod
+    async def capture_midi(self) -> None:
+        """Capture recently played MIDI."""
+        ...
+
+    @abstractmethod
+    async def trigger_session_record(self) -> None:
+        """Toggle session record."""
+        ...
+
+    @abstractmethod
+    async def jump_by(self, beats: float) -> None:
+        """Jump forward/backward by beats."""
+        ...
+
+    @abstractmethod
+    async def jump_to(self, time: float) -> None:
+        """Jump to a specific time position."""
+        ...
+
+    @abstractmethod
+    async def jump_to_next_cue(self) -> None:
+        """Jump to the next cue point."""
+        ...
+
+    @abstractmethod
+    async def jump_to_prev_cue(self) -> None:
+        """Jump to the previous cue point."""
+        ...
+
+    # Song property getters/setters
+
+    @abstractmethod
+    async def get_swing_amount(self) -> float:
+        """Get song swing amount (0.0-1.0)."""
+        ...
+
+    @abstractmethod
+    async def set_swing_amount(self, swing: float) -> None:
+        """Set song swing amount (0.0-1.0)."""
+        ...
+
+    @abstractmethod
+    async def get_metronome(self) -> bool:
+        """Get metronome enabled state."""
+        ...
+
+    @abstractmethod
+    async def set_metronome(self, enabled: bool) -> None:
+        """Set metronome enabled state."""
+        ...
+
+    @abstractmethod
+    async def get_overdub(self) -> bool:
+        """Get overdub enabled state."""
+        ...
+
+    @abstractmethod
+    async def set_overdub(self, enabled: bool) -> None:
+        """Set overdub enabled state."""
+        ...
+
+    @abstractmethod
+    async def get_song_length(self) -> float:
+        """Get song length in beats."""
+        ...
+
+    @abstractmethod
+    async def get_loop(self) -> bool:
+        """Get loop enabled state."""
+        ...
+
+    @abstractmethod
+    async def set_loop(self, enabled: bool) -> None:
+        """Set loop enabled state."""
+        ...
+
+    @abstractmethod
+    async def get_loop_start(self) -> float:
+        """Get loop start position in beats."""
+        ...
+
+    @abstractmethod
+    async def set_loop_start(self, start: float) -> None:
+        """Set loop start position in beats."""
+        ...
+
+    @abstractmethod
+    async def get_loop_length(self) -> float:
+        """Get loop length in beats."""
+        ...
+
+    @abstractmethod
+    async def set_loop_length(self, length: float) -> None:
+        """Set loop length in beats."""
+        ...
+
+    @abstractmethod
+    async def get_record_mode(self) -> bool:
+        """Get record mode state."""
+        ...
+
+    @abstractmethod
+    async def get_session_record(self) -> bool:
+        """Get session record state."""
+        ...
+
+    @abstractmethod
+    async def get_punch_in(self) -> bool:
+        """Get punch-in state."""
+        ...
+
+    @abstractmethod
+    async def get_punch_out(self) -> bool:
+        """Get punch-out state."""
+        ...
+
+    @abstractmethod
+    async def get_num_return_tracks(self) -> int:
+        """Get number of return tracks."""
+        ...
+
+    # Clip property operations
+
+    @abstractmethod
+    async def get_clip_name(self, track_id: int, clip_id: int) -> str:
+        """Get clip name."""
+        ...
+
+    @abstractmethod
+    async def set_clip_name(self, track_id: int, clip_id: int, name: str) -> None:
+        """Set clip name."""
+        ...
+
+    @abstractmethod
+    async def get_clip_length(self, track_id: int, clip_id: int) -> float:
+        """Get clip length in beats."""
+        ...
+
+    @abstractmethod
+    async def set_clip_length(self, track_id: int, clip_id: int, length: float) -> None:
+        """Set clip length in beats."""
+        ...
+
+    @abstractmethod
+    async def get_clip_loop_start(self, track_id: int, clip_id: int) -> float:
+        """Get clip loop start position."""
+        ...
+
+    @abstractmethod
+    async def set_clip_loop_start(self, track_id: int, clip_id: int, start: float) -> None:
+        """Set clip loop start position."""
+        ...
+
+    @abstractmethod
+    async def get_clip_loop_end(self, track_id: int, clip_id: int) -> float:
+        """Get clip loop end position."""
+        ...
+
+    @abstractmethod
+    async def set_clip_loop_end(self, track_id: int, clip_id: int, end: float) -> None:
+        """Set clip loop end position."""
+        ...
+
+    @abstractmethod
+    async def get_clip_is_playing(self, track_id: int, clip_id: int) -> bool:
+        """Check if clip is currently playing."""
+        ...
+
+    @abstractmethod
+    async def get_clip_playing_position(self, track_id: int, clip_id: int) -> float:
+        """Get clip's current playing position."""
+        ...
+
+    @abstractmethod
+    async def has_clip(self, track_id: int, clip_id: int) -> bool:
+        """Check if a clip slot contains a clip."""
+        ...
+
+    # Track enhancements
+
+    @abstractmethod
+    async def get_track_color(self, track_id: int) -> int:
+        """Get track color index."""
+        ...
+
+    @abstractmethod
+    async def set_track_color(self, track_id: int, color: int) -> None:
+        """Set track color index."""
+        ...
+
+    @abstractmethod
+    async def get_track_send(self, track_id: int, send_id: int) -> float:
+        """Get track send amount (0.0-1.0)."""
+        ...
+
+    @abstractmethod
+    async def set_track_send(self, track_id: int, send_id: int, amount: float) -> None:
+        """Set track send amount (0.0-1.0)."""
+        ...
+
+    @abstractmethod
+    async def stop_all_track_clips(self, track_id: int) -> None:
+        """Stop all clips on a track."""
+        ...
+
+    @abstractmethod
+    async def duplicate_track(self, track_id: int) -> None:
+        """Duplicate a track."""
+        ...
+
+    @abstractmethod
+    async def get_track_num_devices(self, track_id: int) -> int:
+        """Get number of devices on a track."""
+        ...
+
+    @abstractmethod
+    async def get_track_devices(self, track_id: int) -> list[str]:
+        """Get list of device names on a track."""
+        ...
+
+    # Return tracks & Master track
+
+    @abstractmethod
+    async def create_return_track(self) -> None:
+        """Create a new return track."""
+        ...
+
+    @abstractmethod
+    async def get_return_track_volume(self, return_id: int) -> float:
+        """Get return track volume."""
+        ...
+
+    @abstractmethod
+    async def set_return_track_volume(self, return_id: int, volume: float) -> None:
+        """Set return track volume."""
+        ...
+
+    @abstractmethod
+    async def get_return_track_pan(self, return_id: int) -> float:
+        """Get return track panning."""
+        ...
+
+    @abstractmethod
+    async def set_return_track_pan(self, return_id: int, pan: float) -> None:
+        """Set return track panning."""
+        ...
+
+    @abstractmethod
+    async def get_return_track_mute(self, return_id: int) -> bool:
+        """Get return track mute state."""
+        ...
+
+    @abstractmethod
+    async def set_return_track_mute(self, return_id: int, mute: bool) -> None:
+        """Set return track mute state."""
+        ...
+
+    @abstractmethod
+    async def get_return_track_name(self, return_id: int) -> str:
+        """Get return track name."""
+        ...
+
+    @abstractmethod
+    async def set_return_track_name(self, return_id: int, name: str) -> None:
+        """Set return track name."""
+        ...
+
+    @abstractmethod
+    async def get_master_volume(self) -> float:
+        """Get master track volume."""
+        ...
+
+    @abstractmethod
+    async def set_master_volume(self, volume: float) -> None:
+        """Set master track volume."""
+        ...
+
+    @abstractmethod
+    async def get_master_pan(self) -> float:
+        """Get master track panning."""
+        ...
+
+    @abstractmethod
+    async def set_master_pan(self, pan: float) -> None:
+        """Set master track panning."""
+        ...
+
+    # Device operations enhancement
+
+    @abstractmethod
+    async def get_device_name(self, track_id: int, device_id: int) -> str:
+        """Get device name."""
+        ...
+
+    @abstractmethod
+    async def get_device_class_name(self, track_id: int, device_id: int) -> str:
+        """Get device class name."""
+        ...
+
+    @abstractmethod
+    async def get_device_num_parameters(self, track_id: int, device_id: int) -> int:
+        """Get number of parameters on a device."""
+        ...
+
+    @abstractmethod
+    async def get_device_is_active(self, track_id: int, device_id: int) -> bool:
+        """Get device active/enabled state."""
+        ...
+
+    @abstractmethod
+    async def set_device_is_active(self, track_id: int, device_id: int, active: bool) -> None:
+        """Set device active/enabled state."""
+        ...
+
+    @abstractmethod
+    async def get_device_parameter_value(
+        self, track_id: int, device_id: int, param_id: int
+    ) -> float:
+        """Get a single device parameter value."""
+        ...
+
+    @abstractmethod
+    async def get_device_parameter_name(self, track_id: int, device_id: int, param_id: int) -> str:
+        """Get device parameter name."""
+        ...
+
+    @abstractmethod
+    async def get_device_parameter_display_value(
+        self, track_id: int, device_id: int, param_id: int
+    ) -> str:
+        """Get device parameter display value (human-readable string)."""
+        ...
+
+    @abstractmethod
+    async def get_device_parameter_min(self, track_id: int, device_id: int, param_id: int) -> float:
+        """Get device parameter minimum value."""
+        ...
+
+    @abstractmethod
+    async def get_device_parameter_max(self, track_id: int, device_id: int, param_id: int) -> float:
+        """Get device parameter maximum value."""
+        ...

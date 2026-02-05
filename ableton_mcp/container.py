@@ -5,6 +5,10 @@ from dependency_injector import containers, providers
 from ableton_mcp.adapters.service_adapters import (
     AbletonClipService,
     AbletonConnectionService,
+    AbletonDeviceService,
+    AbletonReturnTrackService,
+    AbletonSceneService,
+    AbletonSongPropertyService,
     AbletonTrackService,
     AbletonTransportService,
 )
@@ -13,11 +17,16 @@ from ableton_mcp.application.use_cases import (
     AnalyzeHarmonyUseCase,
     AnalyzeTempoUseCase,
     ArrangementSuggestionsUseCase,
+    ClipOperationsUseCase,
     ConnectToAbletonUseCase,
+    DeviceOperationsUseCase,
     GetClipContentUseCase,
     GetSongInfoUseCase,
     MixAnalysisUseCase,
     RefreshSongDataUseCase,
+    ReturnTrackOperationsUseCase,
+    SceneOperationsUseCase,
+    SongPropertyUseCase,
     TrackOperationsUseCase,
     TransportControlUseCase,
 )
@@ -68,6 +77,14 @@ class Container(containers.DeclarativeContainer):
     track_service = providers.Factory(AbletonTrackService, gateway=ableton_gateway)
 
     clip_service = providers.Factory(AbletonClipService, gateway=ableton_gateway)
+
+    scene_service = providers.Factory(AbletonSceneService, gateway=ableton_gateway)
+
+    return_track_service = providers.Factory(AbletonReturnTrackService, gateway=ableton_gateway)
+
+    device_service = providers.Factory(AbletonDeviceService, gateway=ableton_gateway)
+
+    song_property_service = providers.Factory(AbletonSongPropertyService, gateway=ableton_gateway)
 
     # Application - Use Cases
     connect_use_case = providers.Factory(
@@ -129,6 +146,35 @@ class Container(containers.DeclarativeContainer):
         GetClipContentUseCase, clip_service=clip_service, song_repository=song_repository
     )
 
+    scene_ops_use_case = providers.Factory(
+        SceneOperationsUseCase,
+        scene_service=scene_service,
+        song_repository=song_repository,
+    )
+
+    song_property_use_case = providers.Factory(
+        SongPropertyUseCase,
+        song_property_service=song_property_service,
+    )
+
+    clip_ops_use_case = providers.Factory(
+        ClipOperationsUseCase,
+        clip_service=clip_service,
+        song_repository=song_repository,
+    )
+
+    return_track_ops_use_case = providers.Factory(
+        ReturnTrackOperationsUseCase,
+        return_track_service=return_track_service,
+        song_repository=song_repository,
+    )
+
+    device_ops_use_case = providers.Factory(
+        DeviceOperationsUseCase,
+        device_service=device_service,
+        song_repository=song_repository,
+    )
+
     # Interface - MCP Server
     mcp_server = providers.Factory(
         AbletonMCPServer,
@@ -143,4 +189,9 @@ class Container(containers.DeclarativeContainer):
         arrangement_suggestions_use_case=arrangement_suggestions_use_case,
         clip_content_use_case=clip_content_use_case,
         refresh_song_data_use_case=refresh_song_data_use_case,
+        scene_ops_use_case=scene_ops_use_case,
+        song_property_use_case=song_property_use_case,
+        clip_ops_use_case=clip_ops_use_case,
+        return_track_ops_use_case=return_track_ops_use_case,
+        device_ops_use_case=device_ops_use_case,
     )

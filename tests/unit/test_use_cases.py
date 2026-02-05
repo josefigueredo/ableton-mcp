@@ -7,12 +7,22 @@ from ableton_mcp.application.use_cases import (
     AddNotesUseCase,
     AnalyzeHarmonyRequest,
     AnalyzeHarmonyUseCase,
+    ClipOperationRequest,
+    ClipOperationsUseCase,
     ConnectToAbletonRequest,
     ConnectToAbletonUseCase,
+    DeviceOperationRequest,
+    DeviceOperationsUseCase,
     GetClipContentRequest,
     GetClipContentUseCase,
     GetSongInfoRequest,
     GetSongInfoUseCase,
+    ReturnTrackOperationRequest,
+    ReturnTrackOperationsUseCase,
+    SceneOperationRequest,
+    SceneOperationsUseCase,
+    SongPropertyRequest,
+    SongPropertyUseCase,
     TrackOperationRequest,
     TrackOperationsUseCase,
     TransportControlRequest,
@@ -743,3 +753,722 @@ class TestArrangementSuggestionsUseCase:
 
         assert result.success is True
         assert result.data["genre"] == "pop"  # Should default to pop
+
+
+class TestSceneOperationsUseCase:
+    """Test cases for scene operations use case."""
+
+    async def test_fire_scene(self) -> None:
+        """Test firing a scene."""
+        mock_service = Mock()
+        mock_service.fire_scene = AsyncMock()
+        mock_repository = InMemorySongRepository()
+
+        use_case = SceneOperationsUseCase(mock_service, mock_repository)
+        request = SceneOperationRequest(action="fire", scene_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert "Fired scene 0" in result.message
+        mock_service.fire_scene.assert_called_once_with(0)
+
+    async def test_get_scene_info(self) -> None:
+        """Test getting scene info."""
+        mock_service = Mock()
+        mock_service.get_scene_info = AsyncMock(
+            return_value={"scene_id": 0, "name": "Intro", "color": 5}
+        )
+        mock_repository = InMemorySongRepository()
+
+        use_case = SceneOperationsUseCase(mock_service, mock_repository)
+        request = SceneOperationRequest(action="get_info", scene_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["name"] == "Intro"
+
+    async def test_create_scene(self) -> None:
+        """Test creating a scene."""
+        mock_service = Mock()
+        mock_service.create_scene = AsyncMock()
+        mock_repository = InMemorySongRepository()
+
+        use_case = SceneOperationsUseCase(mock_service, mock_repository)
+        request = SceneOperationRequest(action="create", index=2)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.create_scene.assert_called_once_with(2)
+
+    async def test_delete_scene(self) -> None:
+        """Test deleting a scene."""
+        mock_service = Mock()
+        mock_service.delete_scene = AsyncMock()
+        mock_repository = InMemorySongRepository()
+
+        use_case = SceneOperationsUseCase(mock_service, mock_repository)
+        request = SceneOperationRequest(action="delete", scene_id=1)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.delete_scene.assert_called_once_with(1)
+
+    async def test_set_scene_name(self) -> None:
+        """Test setting scene name."""
+        mock_service = Mock()
+        mock_service.set_scene_name = AsyncMock()
+        mock_repository = InMemorySongRepository()
+
+        use_case = SceneOperationsUseCase(mock_service, mock_repository)
+        request = SceneOperationRequest(action="set_name", scene_id=0, name="Chorus")
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.set_scene_name.assert_called_once_with(0, "Chorus")
+
+    async def test_fire_scene_missing_id(self) -> None:
+        """Test firing scene without scene_id."""
+        mock_service = Mock()
+        mock_repository = InMemorySongRepository()
+
+        use_case = SceneOperationsUseCase(mock_service, mock_repository)
+        request = SceneOperationRequest(action="fire")
+
+        result = await use_case.execute(request)
+
+        assert result.success is False
+        assert "scene_id is required" in result.message
+
+
+class TestSongPropertyUseCase:
+    """Test cases for song property use case."""
+
+    async def test_get_properties(self) -> None:
+        """Test getting song properties."""
+        mock_service = Mock()
+        mock_service.get_song_properties = AsyncMock(
+            return_value={
+                "swing_amount": 0.0,
+                "metronome": False,
+                "overdub": False,
+                "song_length": 128.0,
+                "loop": False,
+                "loop_start": 0.0,
+                "loop_length": 16.0,
+                "record_mode": False,
+                "session_record": False,
+                "punch_in": False,
+                "punch_out": False,
+            }
+        )
+
+        use_case = SongPropertyUseCase(mock_service)
+        request = SongPropertyRequest(action="get_properties")
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["swing_amount"] == 0.0
+
+    async def test_set_swing(self) -> None:
+        """Test setting swing."""
+        mock_service = Mock()
+        mock_service.set_swing = AsyncMock()
+
+        use_case = SongPropertyUseCase(mock_service)
+        request = SongPropertyRequest(action="set_swing", value=0.5)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.set_swing.assert_called_once_with(0.5)
+
+    async def test_set_metronome(self) -> None:
+        """Test setting metronome."""
+        mock_service = Mock()
+        mock_service.set_metronome = AsyncMock()
+
+        use_case = SongPropertyUseCase(mock_service)
+        request = SongPropertyRequest(action="set_metronome", enabled=True)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert "enabled" in result.message
+        mock_service.set_metronome.assert_called_once_with(True)
+
+    async def test_set_loop(self) -> None:
+        """Test setting loop."""
+        mock_service = Mock()
+        mock_service.set_loop = AsyncMock()
+
+        use_case = SongPropertyUseCase(mock_service)
+        request = SongPropertyRequest(action="set_loop", enabled=True)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.set_loop.assert_called_once_with(True)
+
+    async def test_set_tempo(self) -> None:
+        """Test setting tempo."""
+        mock_service = Mock()
+        mock_service.set_tempo = AsyncMock()
+
+        use_case = SongPropertyUseCase(mock_service)
+        request = SongPropertyRequest(action="set_tempo", value=140.0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.set_tempo.assert_called_once_with(140.0)
+
+    async def test_set_swing_missing_value(self) -> None:
+        """Test setting swing without value."""
+        mock_service = Mock()
+
+        use_case = SongPropertyUseCase(mock_service)
+        request = SongPropertyRequest(action="set_swing")
+
+        result = await use_case.execute(request)
+
+        assert result.success is False
+
+
+class TestClipOperationsUseCase:
+    """Test cases for clip operations use case."""
+
+    async def test_has_clip(self) -> None:
+        """Test checking if clip exists."""
+        song_repository = InMemorySongRepository()
+        clip_service = Mock()
+        clip_service.has_clip = AsyncMock(return_value=True)
+
+        song = Song(name="Test Song")
+        track = Track(name="Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = ClipOperationsUseCase(clip_service, song_repository)
+        request = ClipOperationRequest(action="has_clip", track_id=0, clip_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["has_clip"] is True
+
+    async def test_get_clip_info(self) -> None:
+        """Test getting clip info."""
+        song_repository = InMemorySongRepository()
+        clip_service = Mock()
+        clip_service.has_clip = AsyncMock(return_value=True)
+        clip_service.get_clip_name = AsyncMock(return_value="My Clip")
+        clip_service.get_clip_length = AsyncMock(return_value=8.0)
+        clip_service.get_clip_loop_start = AsyncMock(return_value=0.0)
+        clip_service.get_clip_loop_end = AsyncMock(return_value=8.0)
+        clip_service.get_clip_is_playing = AsyncMock(return_value=False)
+
+        song = Song(name="Test Song")
+        track = Track(name="Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = ClipOperationsUseCase(clip_service, song_repository)
+        request = ClipOperationRequest(action="get_info", track_id=0, clip_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["name"] == "My Clip"
+        assert result.data["length"] == 8.0
+
+    async def test_set_clip_name(self) -> None:
+        """Test setting clip name."""
+        song_repository = InMemorySongRepository()
+        clip_service = Mock()
+        clip_service.set_clip_name = AsyncMock()
+
+        song = Song(name="Test Song")
+        track = Track(name="Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = ClipOperationsUseCase(clip_service, song_repository)
+        request = ClipOperationRequest(action="set_name", track_id=0, clip_id=0, name="New Name")
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        clip_service.set_clip_name.assert_called_once_with(0, 0, "New Name")
+
+    async def test_fire_clip(self) -> None:
+        """Test firing a clip."""
+        song_repository = InMemorySongRepository()
+        clip_service = Mock()
+        clip_service.fire_clip = AsyncMock()
+
+        song = Song(name="Test Song")
+        track = Track(name="Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = ClipOperationsUseCase(clip_service, song_repository)
+        request = ClipOperationRequest(action="fire", track_id=0, clip_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        clip_service.fire_clip.assert_called_once_with(0, 0)
+
+    async def test_create_clip(self) -> None:
+        """Test creating a clip."""
+        song_repository = InMemorySongRepository()
+        clip_service = Mock()
+        clip_service.create_clip = AsyncMock()
+
+        song = Song(name="Test Song")
+        track = Track(name="Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = ClipOperationsUseCase(clip_service, song_repository)
+        request = ClipOperationRequest(action="create", track_id=0, clip_id=0, length=8.0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        clip_service.create_clip.assert_called_once_with(0, 0, 8.0)
+
+    async def test_clip_track_not_found(self) -> None:
+        """Test clip operation on nonexistent track."""
+        song_repository = InMemorySongRepository()
+        clip_service = Mock()
+
+        song = Song(name="Test Song")
+        await song_repository.save_song(song)
+
+        use_case = ClipOperationsUseCase(clip_service, song_repository)
+        request = ClipOperationRequest(action="get_info", track_id=99, clip_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is False
+        assert "Track 99 not found" in result.message
+
+
+class TestExtendedTransportUseCase:
+    """Test cases for extended transport actions."""
+
+    async def test_undo(self) -> None:
+        """Test undo action."""
+        mock_transport = Mock()
+        mock_transport.undo = AsyncMock()
+        mock_repository = Mock()
+
+        use_case = TransportControlUseCase(mock_transport, mock_repository)
+        request = TransportControlRequest(action="undo")
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert "Undo" in result.message
+        mock_transport.undo.assert_called_once()
+
+    async def test_redo(self) -> None:
+        """Test redo action."""
+        mock_transport = Mock()
+        mock_transport.redo = AsyncMock()
+        mock_repository = Mock()
+
+        use_case = TransportControlUseCase(mock_transport, mock_repository)
+        request = TransportControlRequest(action="redo")
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_transport.redo.assert_called_once()
+
+    async def test_jump_by(self) -> None:
+        """Test jump_by action."""
+        mock_transport = Mock()
+        mock_transport.jump_by = AsyncMock()
+        mock_repository = Mock()
+
+        use_case = TransportControlUseCase(mock_transport, mock_repository)
+        request = TransportControlRequest(action="jump_by", value=8.0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_transport.jump_by.assert_called_once_with(8.0)
+
+    async def test_jump_by_missing_value(self) -> None:
+        """Test jump_by without value."""
+        mock_transport = Mock()
+        mock_repository = Mock()
+
+        use_case = TransportControlUseCase(mock_transport, mock_repository)
+        request = TransportControlRequest(action="jump_by")
+
+        result = await use_case.execute(request)
+
+        assert result.success is False
+
+    async def test_capture_midi(self) -> None:
+        """Test capture MIDI action."""
+        mock_transport = Mock()
+        mock_transport.capture_midi = AsyncMock()
+        mock_repository = Mock()
+
+        use_case = TransportControlUseCase(mock_transport, mock_repository)
+        request = TransportControlRequest(action="capture_midi")
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_transport.capture_midi.assert_called_once()
+
+    async def test_stop_all_clips(self) -> None:
+        """Test stop all clips."""
+        mock_transport = Mock()
+        mock_transport.stop_all_clips = AsyncMock()
+        mock_repository = Mock()
+
+        use_case = TransportControlUseCase(mock_transport, mock_repository)
+        request = TransportControlRequest(action="stop_all_clips")
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_transport.stop_all_clips.assert_called_once()
+
+
+class TestReturnTrackOperationsUseCase:
+    """Test cases for return track operations."""
+
+    async def test_create_return_track(self) -> None:
+        """Test creating a return track."""
+        mock_service = Mock()
+        mock_service.create_return_track = AsyncMock()
+        mock_repository = InMemorySongRepository()
+
+        use_case = ReturnTrackOperationsUseCase(mock_service, mock_repository)
+        request = ReturnTrackOperationRequest(action="create")
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.create_return_track.assert_called_once()
+
+    async def test_get_return_track_info(self) -> None:
+        """Test getting return track info."""
+        mock_service = Mock()
+        mock_service.get_return_track_info = AsyncMock(
+            return_value={
+                "return_id": 0,
+                "name": "Reverb",
+                "volume": 0.8,
+                "pan": 0.0,
+                "muted": False,
+            }
+        )
+        mock_repository = InMemorySongRepository()
+
+        use_case = ReturnTrackOperationsUseCase(mock_service, mock_repository)
+        request = ReturnTrackOperationRequest(action="get_info", return_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["name"] == "Reverb"
+
+    async def test_set_return_volume(self) -> None:
+        """Test setting return track volume."""
+        mock_service = Mock()
+        mock_service.set_return_track_volume = AsyncMock()
+        mock_repository = InMemorySongRepository()
+
+        use_case = ReturnTrackOperationsUseCase(mock_service, mock_repository)
+        request = ReturnTrackOperationRequest(action="set_volume", return_id=0, value=0.7)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.set_return_track_volume.assert_called_once_with(0, 0.7)
+
+    async def test_get_master_info(self) -> None:
+        """Test getting master track info."""
+        mock_service = Mock()
+        mock_service.get_master_info = AsyncMock(return_value={"volume": 0.85, "pan": 0.0})
+        mock_repository = InMemorySongRepository()
+
+        use_case = ReturnTrackOperationsUseCase(mock_service, mock_repository)
+        request = ReturnTrackOperationRequest(action="get_master_info")
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["volume"] == 0.85
+
+    async def test_set_master_volume(self) -> None:
+        """Test setting master volume."""
+        mock_service = Mock()
+        mock_service.set_master_volume = AsyncMock()
+        mock_repository = InMemorySongRepository()
+
+        use_case = ReturnTrackOperationsUseCase(mock_service, mock_repository)
+        request = ReturnTrackOperationRequest(action="set_master_volume", value=0.9)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.set_master_volume.assert_called_once_with(0.9)
+
+    async def test_missing_return_id(self) -> None:
+        """Test operation requiring return_id without it."""
+        mock_service = Mock()
+        mock_repository = InMemorySongRepository()
+
+        use_case = ReturnTrackOperationsUseCase(mock_service, mock_repository)
+        request = ReturnTrackOperationRequest(action="get_info")
+
+        result = await use_case.execute(request)
+
+        assert result.success is False
+
+
+class TestDeviceOperationsUseCase:
+    """Test cases for device operations."""
+
+    async def test_get_device_info(self) -> None:
+        """Test getting device info."""
+        song_repository = InMemorySongRepository()
+        mock_service = Mock()
+        mock_service.get_device_info = AsyncMock(
+            return_value={
+                "track_id": 0,
+                "device_id": 0,
+                "name": "EQ Eight",
+                "class_name": "PluginDevice",
+                "num_parameters": 10,
+                "is_active": True,
+            }
+        )
+
+        song = Song(name="Test Song")
+        track = Track(name="Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = DeviceOperationsUseCase(mock_service, song_repository)
+        request = DeviceOperationRequest(action="get_info", track_id=0, device_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["name"] == "EQ Eight"
+
+    async def test_set_device_active(self) -> None:
+        """Test toggling device active state."""
+        song_repository = InMemorySongRepository()
+        mock_service = Mock()
+        mock_service.set_device_active = AsyncMock()
+
+        song = Song(name="Test Song")
+        track = Track(name="Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = DeviceOperationsUseCase(mock_service, song_repository)
+        request = DeviceOperationRequest(action="set_active", track_id=0, device_id=0, active=False)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.set_device_active.assert_called_once_with(0, 0, False)
+
+    async def test_get_parameter(self) -> None:
+        """Test getting parameter info."""
+        song_repository = InMemorySongRepository()
+        mock_service = Mock()
+        mock_service.get_parameter_info = AsyncMock(
+            return_value={
+                "parameter_id": 1,
+                "name": "Frequency",
+                "value": 0.5,
+                "display_value": "1.00 kHz",
+                "min": 0.0,
+                "max": 1.0,
+            }
+        )
+
+        song = Song(name="Test Song")
+        track = Track(name="Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = DeviceOperationsUseCase(mock_service, song_repository)
+        request = DeviceOperationRequest(
+            action="get_parameter",
+            track_id=0,
+            device_id=0,
+            parameter_id=1,
+        )
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert result.data["name"] == "Frequency"
+
+    async def test_set_parameter(self) -> None:
+        """Test setting parameter value."""
+        song_repository = InMemorySongRepository()
+        mock_service = Mock()
+        mock_service.set_parameter_value = AsyncMock()
+
+        song = Song(name="Test Song")
+        track = Track(name="Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = DeviceOperationsUseCase(mock_service, song_repository)
+        request = DeviceOperationRequest(
+            action="set_parameter",
+            track_id=0,
+            device_id=0,
+            parameter_id=1,
+            value=0.75,
+        )
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        mock_service.set_parameter_value.assert_called_once_with(0, 0, 1, 0.75)
+
+    async def test_list_parameters(self) -> None:
+        """Test listing all parameters."""
+        song_repository = InMemorySongRepository()
+        mock_service = Mock()
+        mock_service.get_all_parameters = AsyncMock(
+            return_value=[
+                {"id": 0, "name": "Device On", "value": 1.0, "min": 0.0, "max": 1.0},
+            ]
+        )
+
+        song = Song(name="Test Song")
+        track = Track(name="Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = DeviceOperationsUseCase(mock_service, song_repository)
+        request = DeviceOperationRequest(action="list_parameters", track_id=0, device_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        assert len(result.data["parameters"]) == 1
+
+    async def test_device_track_not_found(self) -> None:
+        """Test device operation on nonexistent track."""
+        song_repository = InMemorySongRepository()
+        mock_service = Mock()
+
+        song = Song(name="Test Song")
+        await song_repository.save_song(song)
+
+        use_case = DeviceOperationsUseCase(mock_service, song_repository)
+        request = DeviceOperationRequest(action="get_info", track_id=99, device_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is False
+        assert "Track 99 not found" in result.message
+
+
+class TestTrackEnhancementsUseCase:
+    """Test cases for track enhancement operations."""
+
+    async def test_set_track_color(self) -> None:
+        """Test setting track color."""
+        song_repository = InMemorySongRepository()
+        track_repository = Mock()
+        track_service = Mock()
+        track_service.set_track_color = AsyncMock()
+
+        song = Song(name="Test Song")
+        track = Track(name="Test Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = TrackOperationsUseCase(track_repository, song_repository, track_service)
+        request = TrackOperationRequest(action="set_color", track_id=0, color=5)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        track_service.set_track_color.assert_called_once_with(0, 5)
+
+    async def test_set_track_send(self) -> None:
+        """Test setting track send."""
+        song_repository = InMemorySongRepository()
+        track_repository = Mock()
+        track_service = Mock()
+        track_service.set_track_send = AsyncMock()
+
+        song = Song(name="Test Song")
+        track = Track(name="Test Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = TrackOperationsUseCase(track_repository, song_repository, track_service)
+        request = TrackOperationRequest(action="set_send", track_id=0, send_id=0, value=0.6)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        track_service.set_track_send.assert_called_once_with(0, 0, 0.6)
+
+    async def test_stop_all_track_clips(self) -> None:
+        """Test stopping all clips on a track."""
+        song_repository = InMemorySongRepository()
+        track_repository = Mock()
+        track_service = Mock()
+        track_service.stop_all_track_clips = AsyncMock()
+
+        song = Song(name="Test Song")
+        track = Track(name="Test Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = TrackOperationsUseCase(track_repository, song_repository, track_service)
+        request = TrackOperationRequest(action="stop_all_clips", track_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        track_service.stop_all_track_clips.assert_called_once_with(0)
+
+    async def test_duplicate_track(self) -> None:
+        """Test duplicating a track."""
+        song_repository = InMemorySongRepository()
+        track_repository = Mock()
+        track_service = Mock()
+        track_service.duplicate_track = AsyncMock()
+
+        song = Song(name="Test Song")
+        track = Track(name="Test Track", track_type=TrackType.MIDI)
+        song.add_track(track)
+        await song_repository.save_song(song)
+
+        use_case = TrackOperationsUseCase(track_repository, song_repository, track_service)
+        request = TrackOperationRequest(action="duplicate", track_id=0)
+
+        result = await use_case.execute(request)
+
+        assert result.success is True
+        track_service.duplicate_track.assert_called_once_with(0)

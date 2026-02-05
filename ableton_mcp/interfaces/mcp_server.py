@@ -17,8 +17,12 @@ from ableton_mcp.application.use_cases import (
     AnalyzeTempoUseCase,
     ArrangementSuggestionsRequest,
     ArrangementSuggestionsUseCase,
+    ClipOperationRequest,
+    ClipOperationsUseCase,
     ConnectToAbletonRequest,
     ConnectToAbletonUseCase,
+    DeviceOperationRequest,
+    DeviceOperationsUseCase,
     GetClipContentRequest,
     GetClipContentUseCase,
     GetSongInfoRequest,
@@ -26,6 +30,12 @@ from ableton_mcp.application.use_cases import (
     MixAnalysisRequest,
     MixAnalysisUseCase,
     RefreshSongDataUseCase,
+    ReturnTrackOperationRequest,
+    ReturnTrackOperationsUseCase,
+    SceneOperationRequest,
+    SceneOperationsUseCase,
+    SongPropertyRequest,
+    SongPropertyUseCase,
     TrackOperationRequest,
     TrackOperationsUseCase,
     TransportControlRequest,
@@ -53,6 +63,11 @@ class AbletonMCPServer:
         arrangement_suggestions_use_case: ArrangementSuggestionsUseCase,
         clip_content_use_case: GetClipContentUseCase,
         refresh_song_data_use_case: RefreshSongDataUseCase,
+        scene_ops_use_case: SceneOperationsUseCase,
+        song_property_use_case: SongPropertyUseCase,
+        clip_ops_use_case: ClipOperationsUseCase,
+        return_track_ops_use_case: ReturnTrackOperationsUseCase,
+        device_ops_use_case: DeviceOperationsUseCase,
     ) -> None:
         """Initialize MCP server with use cases."""
         self.server = Server("ableton-live-mcp")
@@ -69,6 +84,11 @@ class AbletonMCPServer:
         self._arrangement_suggestions_use_case = arrangement_suggestions_use_case
         self._clip_content_use_case = clip_content_use_case
         self._refresh_song_data_use_case = refresh_song_data_use_case
+        self._scene_ops_use_case = scene_ops_use_case
+        self._song_property_use_case = song_property_use_case
+        self._clip_ops_use_case = clip_ops_use_case
+        self._return_track_ops_use_case = return_track_ops_use_case
+        self._device_ops_use_case = device_ops_use_case
 
         self._setup_handlers()
 
@@ -109,18 +129,34 @@ class AbletonMCPServer:
                 ),
                 types.Tool(
                     name="transport_control",
-                    description="Control Ableton Live transport (play, stop, record)",
+                    description="Control Ableton Live transport (play, stop, record, undo/redo, navigation, and more)",
                     inputSchema={
                         "type": "object",
                         "properties": {
                             "action": {
                                 "type": "string",
-                                "enum": ["play", "stop", "record", "get_status"],
+                                "enum": [
+                                    "play",
+                                    "stop",
+                                    "record",
+                                    "get_status",
+                                    "continue",
+                                    "stop_all_clips",
+                                    "tap_tempo",
+                                    "undo",
+                                    "redo",
+                                    "capture_midi",
+                                    "session_record",
+                                    "jump_by",
+                                    "jump_to",
+                                    "next_cue",
+                                    "prev_cue",
+                                ],
                                 "description": "Transport action to perform",
                             },
                             "value": {
                                 "type": "number",
-                                "description": "Optional value for actions that require it",
+                                "description": "Value for jump_by (beats) or jump_to (time position)",
                             },
                         },
                         "required": ["action"],
@@ -152,7 +188,7 @@ class AbletonMCPServer:
                 ),
                 types.Tool(
                     name="track_operations",
-                    description="Perform operations on Ableton Live tracks",
+                    description="Perform operations on Ableton Live tracks (volume, pan, mute, solo, arm, color, sends, duplicate, etc.)",
                     inputSchema={
                         "type": "object",
                         "properties": {
@@ -167,6 +203,10 @@ class AbletonMCPServer:
                                     "arm",
                                     "create",
                                     "delete",
+                                    "set_color",
+                                    "set_send",
+                                    "stop_all_clips",
+                                    "duplicate",
                                 ],
                                 "description": "Track operation to perform",
                             },
@@ -177,7 +217,7 @@ class AbletonMCPServer:
                             },
                             "value": {
                                 "type": "number",
-                                "description": "Value for volume/pan operations (-1.0 to 1.0)",
+                                "description": "Value for volume/pan/send operations",
                                 "minimum": -1.0,
                                 "maximum": 1.0,
                             },
@@ -189,6 +229,17 @@ class AbletonMCPServer:
                                 "type": "string",
                                 "enum": ["midi", "audio", "return", "group"],
                                 "description": "Type of track to create",
+                            },
+                            "color": {
+                                "type": "integer",
+                                "description": "Color index (0-69) for set_color action",
+                                "minimum": 0,
+                                "maximum": 69,
+                            },
+                            "send_id": {
+                                "type": "integer",
+                                "description": "Send index (0-based) for set_send action",
+                                "minimum": 0,
                             },
                         },
                         "required": ["action"],
@@ -404,6 +455,210 @@ class AbletonMCPServer:
                         "properties": {},
                     },
                 ),
+                types.Tool(
+                    name="scene_operations",
+                    description="Perform operations on Ableton Live scenes (fire, create, delete, rename, recolor)",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "action": {
+                                "type": "string",
+                                "enum": [
+                                    "fire",
+                                    "get_info",
+                                    "create",
+                                    "delete",
+                                    "set_name",
+                                    "set_color",
+                                ],
+                                "description": "Scene operation to perform",
+                            },
+                            "scene_id": {
+                                "type": "integer",
+                                "description": "Scene ID (0-based index)",
+                                "minimum": 0,
+                            },
+                            "name": {
+                                "type": "string",
+                                "description": "Scene name for set_name action",
+                            },
+                            "color": {
+                                "type": "integer",
+                                "description": "Color index (0-69) for set_color action",
+                                "minimum": 0,
+                                "maximum": 69,
+                            },
+                            "index": {
+                                "type": "integer",
+                                "description": "Index for scene creation (-1 for end)",
+                            },
+                        },
+                        "required": ["action"],
+                    },
+                ),
+                types.Tool(
+                    name="song_properties",
+                    description="Get and set song-level properties (swing, metronome, overdub, loop, tempo)",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "action": {
+                                "type": "string",
+                                "enum": [
+                                    "get_properties",
+                                    "set_swing",
+                                    "set_metronome",
+                                    "set_overdub",
+                                    "set_loop",
+                                    "set_loop_start",
+                                    "set_loop_length",
+                                    "set_tempo",
+                                ],
+                                "description": "Song property operation to perform",
+                            },
+                            "value": {
+                                "type": "number",
+                                "description": "Numeric value for swing/loop_start/loop_length/tempo",
+                            },
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Boolean value for metronome/overdub/loop toggle",
+                            },
+                        },
+                        "required": ["action"],
+                    },
+                ),
+                types.Tool(
+                    name="clip_operations",
+                    description="Perform operations on Ableton Live clips (get info, rename, resize, loop settings, fire, stop, create, delete)",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "action": {
+                                "type": "string",
+                                "enum": [
+                                    "get_info",
+                                    "set_name",
+                                    "set_length",
+                                    "set_loop_start",
+                                    "set_loop_end",
+                                    "fire",
+                                    "stop",
+                                    "create",
+                                    "delete",
+                                    "has_clip",
+                                ],
+                                "description": "Clip operation to perform",
+                            },
+                            "track_id": {
+                                "type": "integer",
+                                "description": "Track ID (0-based index)",
+                                "minimum": 0,
+                            },
+                            "clip_id": {
+                                "type": "integer",
+                                "description": "Clip slot ID (0-based index)",
+                                "minimum": 0,
+                            },
+                            "name": {
+                                "type": "string",
+                                "description": "Clip name for set_name action",
+                            },
+                            "length": {
+                                "type": "number",
+                                "description": "Clip length in beats for set_length/create",
+                                "minimum": 0.1,
+                            },
+                            "value": {
+                                "type": "number",
+                                "description": "Value for loop_start/loop_end",
+                            },
+                        },
+                        "required": ["action", "track_id", "clip_id"],
+                    },
+                ),
+                types.Tool(
+                    name="return_track_operations",
+                    description="Control Ableton Live return tracks and master track (volume, pan, mute, create)",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "action": {
+                                "type": "string",
+                                "enum": [
+                                    "get_info",
+                                    "set_volume",
+                                    "set_pan",
+                                    "mute",
+                                    "set_name",
+                                    "create",
+                                    "get_master_info",
+                                    "set_master_volume",
+                                    "set_master_pan",
+                                ],
+                                "description": "Return/master track operation",
+                            },
+                            "return_id": {
+                                "type": "integer",
+                                "description": "Return track ID (0-based index)",
+                                "minimum": 0,
+                            },
+                            "value": {
+                                "type": "number",
+                                "description": "Value for volume/pan operations",
+                            },
+                            "name": {
+                                "type": "string",
+                                "description": "Name for set_name action",
+                            },
+                        },
+                        "required": ["action"],
+                    },
+                ),
+                types.Tool(
+                    name="device_operations",
+                    description="Control Ableton Live devices and their parameters (get info, toggle active, get/set parameters)",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "action": {
+                                "type": "string",
+                                "enum": [
+                                    "get_info",
+                                    "set_active",
+                                    "get_parameter",
+                                    "set_parameter",
+                                    "list_parameters",
+                                ],
+                                "description": "Device operation to perform",
+                            },
+                            "track_id": {
+                                "type": "integer",
+                                "description": "Track ID (0-based index)",
+                                "minimum": 0,
+                            },
+                            "device_id": {
+                                "type": "integer",
+                                "description": "Device ID (0-based index)",
+                                "minimum": 0,
+                            },
+                            "parameter_id": {
+                                "type": "integer",
+                                "description": "Parameter ID for get/set parameter",
+                                "minimum": 0,
+                            },
+                            "value": {
+                                "type": "number",
+                                "description": "Value for set_parameter",
+                            },
+                            "active": {
+                                "type": "boolean",
+                                "description": "Active state for set_active",
+                            },
+                        },
+                        "required": ["action", "track_id", "device_id"],
+                    },
+                ),
             ]
 
         @self.server.call_tool()
@@ -442,6 +697,8 @@ class AbletonMCPServer:
                         value=arguments.get("value"),
                         name=arguments.get("name"),
                         track_type=arguments.get("track_type"),
+                        color=arguments.get("color"),
+                        send_id=arguments.get("send_id"),
                     )
                     result = await self._track_ops_use_case.execute(track_ops_req)
 
@@ -496,6 +753,55 @@ class AbletonMCPServer:
 
                 elif name == "refresh_song_data":
                     result = await self._refresh_song_data_use_case.execute()
+
+                elif name == "scene_operations":
+                    scene_req = SceneOperationRequest(
+                        action=arguments["action"],
+                        scene_id=arguments.get("scene_id"),
+                        name=arguments.get("name"),
+                        color=arguments.get("color"),
+                        index=arguments.get("index"),
+                    )
+                    result = await self._scene_ops_use_case.execute(scene_req)
+
+                elif name == "song_properties":
+                    song_prop_req = SongPropertyRequest(
+                        action=arguments["action"],
+                        value=arguments.get("value"),
+                        enabled=arguments.get("enabled"),
+                    )
+                    result = await self._song_property_use_case.execute(song_prop_req)
+
+                elif name == "clip_operations":
+                    clip_ops_req = ClipOperationRequest(
+                        action=arguments["action"],
+                        track_id=arguments["track_id"],
+                        clip_id=arguments["clip_id"],
+                        name=arguments.get("name"),
+                        length=arguments.get("length"),
+                        value=arguments.get("value"),
+                    )
+                    result = await self._clip_ops_use_case.execute(clip_ops_req)
+
+                elif name == "return_track_operations":
+                    return_req = ReturnTrackOperationRequest(
+                        action=arguments["action"],
+                        return_id=arguments.get("return_id"),
+                        value=arguments.get("value"),
+                        name=arguments.get("name"),
+                    )
+                    result = await self._return_track_ops_use_case.execute(return_req)
+
+                elif name == "device_operations":
+                    device_req = DeviceOperationRequest(
+                        action=arguments["action"],
+                        track_id=arguments["track_id"],
+                        device_id=arguments["device_id"],
+                        parameter_id=arguments.get("parameter_id"),
+                        value=arguments.get("value"),
+                        active=arguments.get("active"),
+                    )
+                    result = await self._device_ops_use_case.execute(device_req)
 
                 else:
                     result = UseCaseResult(
